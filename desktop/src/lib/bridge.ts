@@ -97,6 +97,10 @@ function createWebBridge(): AideDesktopApi {
     chat: async () => ({ ok: false, status: 501, error: "Disponible dans l'application de bureau" }),
     cancelChat: async () => undefined,
     onChatText: () => () => undefined,
+    getCity: async () => null,
+    setCity: async () => undefined,
+    searchCity: async () => ({ ok: false, status: 501, error: "Disponible dans l'application de bureau" }),
+    getWeather: async () => ({ ok: false, status: 501, error: "Disponible dans l'application de bureau" }),
     getServerUrl: async () => server(),
     setServerUrl: async (url) => store.set(SERVER, new URL(url).origin),
     session: async () => {

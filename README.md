@@ -3,7 +3,12 @@
 Application de bureau (Windows, macOS, Linux) + serveur domestique pour piloter son domicile en
 langage naturel, à la voix ou au clavier, grâce à un agent IA (Claude) connecté à Home Assistant.
 
-![Accueil](docs/screenshots/02-accueil.png)
+![Aujourd'hui](docs/screenshots/06-aujourdhui.png)
+
+<p align="center">
+  <img src="docs/screenshots/07-briefing.png" width="49%" alt="Briefing du jour" />
+  <img src="docs/screenshots/08-bienvenue.png" width="49%" alt="Premier lancement" />
+</p>
 
 <p align="center">
   <img src="docs/screenshots/01-connexion.png" width="32%" alt="Connexion" />
@@ -24,7 +29,9 @@ langage naturel, à la voix ou au clavier, grâce à un agent IA (Claude) connec
 - 🧠 **Mémoire** des préférences et habitudes, consultable et effaçable
 - 🔔 **Temps réel** et **notifications natives** du système, icône dans la barre système
 - 👥 **Rôles** administrateur / membre / invité, **journal d'audit** de toutes les actions
-- ✨ **Interface futuriste** : cartes de verre arrondies, fond aurore animé, orbe IA qui réagit à la voix
+- ✨ **Interface futuriste noir et or** : noyau holographique animé (milliers d'éclats lumineux) qui réagit à l'assistant
+- 📅 **Tableau de bord du jour** : horloge, semaine, progression de l'année, lever/coucher du soleil, phase de lune,
+  jours fériés, météo (Open-Meteo, sans clé) heure par heure et sur 3 jours, tâches du jour, **briefing du jour** par Aide
 
 ## Documentation
 

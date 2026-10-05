@@ -8,7 +8,7 @@ export function Toasts() {
     <div className="toasts" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className="toast">
-          <Bell size={18} color="#c4b5fd" style={{ flexShrink: 0, marginTop: 2 }} />
+          <Bell size={18} color="#ffb36b" style={{ flexShrink: 0, marginTop: 2 }} />
           <div style={{ flex: 1 }}>
             <strong>{t.title}</strong>
             <span>{t.body}</span>

@@ -12,6 +12,10 @@ const IPC: typeof IpcChannels = {
   chat: "assistant:chat",
   cancelChat: "assistant:cancel",
   chatText: "assistant:text",
+  getCity: "day:get-city",
+  setCity: "day:set-city",
+  searchCity: "day:search-city",
+  getWeather: "day:weather",
   getServerUrl: "config:get-server",
   setServerUrl: "config:set-server",
   session: "auth:session",
@@ -32,7 +36,11 @@ const api: AideDesktopApi = {
   setMode: (mode) => ipcRenderer.invoke(IPC.setMode, mode),
   setApiKey: (key) => ipcRenderer.invoke(IPC.setApiKey, key),
   clearApiKey: () => ipcRenderer.invoke(IPC.clearApiKey),
-  chat: (requestId, turns) => ipcRenderer.invoke(IPC.chat, requestId, turns),
+  chat: (requestId, turns, dayContext) => ipcRenderer.invoke(IPC.chat, requestId, turns, dayContext),
+  getCity: () => ipcRenderer.invoke(IPC.getCity),
+  setCity: (city) => ipcRenderer.invoke(IPC.setCity, city),
+  searchCity: (name) => ipcRenderer.invoke(IPC.searchCity, name),
+  getWeather: (lat, lon) => ipcRenderer.invoke(IPC.getWeather, lat, lon),
   cancelChat: (requestId) => ipcRenderer.invoke(IPC.cancelChat, requestId),
   onChatText: (listener) => {
     const handler = (_e: IpcRendererEvent, requestId: string, text: string) => listener(requestId, text);

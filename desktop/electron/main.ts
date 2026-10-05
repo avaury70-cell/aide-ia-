@@ -19,7 +19,8 @@ import {
 import fs from "node:fs";
 import path from "node:path";
 
-import { IPC, type ApiResult, type AppMode, type SessionUser } from "../shared/ipc";
+import { IPC, type ApiResult, type AppMode, type City, type SessionUser } from "../shared/ipc";
+import { getWeather, searchCity } from "./weather";
 import { cancelChat, chat, checkApiKey } from "./assistant";
 
 const DEV_URL = process.env.AIDE_DEV_URL;
@@ -37,6 +38,7 @@ const keyFile = () => path.join(app.getPath("userData"), "anthropic-key.bin");
 interface AppConfig {
   serverUrl: string;
   mode: AppMode | null;
+  city?: City | null;
 }
 
 function readConfig(): AppConfig {
@@ -287,10 +289,20 @@ function registerIpc() {
     return res;
   });
   ipcMain.handle(IPC.clearApiKey, () => saveApiKey(null));
-  ipcMain.handle(IPC.chat, (e, requestId: string, turns: unknown) => {
+  ipcMain.handle(IPC.getCity, () => readConfig().city ?? null);
+  ipcMain.handle(IPC.setCity, (_e, city: City) => {
+    const valid =
+      city && typeof city.name === "string" && Number.isFinite(city.lat) && Number.isFinite(city.lon);
+    if (!valid) throw new Error("Ville invalide");
+    writeConfig({ ...readConfig(), city: { name: city.name, region: String(city.region ?? ""), lat: city.lat, lon: city.lon } });
+  });
+  ipcMain.handle(IPC.searchCity, (_e, name: string) => searchCity(String(name)));
+  ipcMain.handle(IPC.getWeather, (_e, lat: number, lon: number) => getWeather(Number(lat), Number(lon)));
+  ipcMain.handle(IPC.chat, (e, requestId: string, turns: unknown, dayContext?: unknown) => {
     if (!apiKey) return { ok: false, status: 401, error: "Aucune clé API enregistrée." };
     const sender = e.sender;
-    return chat(apiKey, String(requestId), turns, (text) => {
+    const context = typeof dayContext === "string" ? dayContext.slice(0, 4000) : undefined;
+    return chat(apiKey, String(requestId), turns, context, (text) => {
       if (!sender.isDestroyed()) sender.send(IPC.chatText, requestId, text);
     });
   });

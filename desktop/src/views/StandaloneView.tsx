@@ -1,10 +1,18 @@
-import { Eye, EyeOff, ExternalLink, KeyRound, MessageSquarePlus, Settings, Square, Volume2, VolumeX, X } from "lucide-react";
+import { Eye, EyeOff, ExternalLink, KeyRound, MessageSquarePlus, Settings, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import type { AssistantStatus, ChatTurn } from "../../shared/ipc";
 import type { ChatMessage } from "../api/types";
 import { Chat } from "../components/Chat";
-import { Orb, type OrbState } from "../components/Orb";
+import { HoloOrb } from "../components/HoloOrb";
+import type { OrbState } from "../components/Orb";
+import { HolidaysCard } from "../components/today/HolidaysCard";
+import { SunMoonCard } from "../components/today/SunMoonCard";
+import { TasksCard } from "../components/today/TasksCard";
+import { TodayCard } from "../components/today/TodayCard";
+import { WeatherCard } from "../components/today/WeatherCard";
+import { useTasks, useWeather } from "../hooks/useDayData";
+import { buildDayContext } from "../lib/dayContext";
 import { useClock } from "../hooks/useClock";
 import { useSpeech } from "../hooks/useVoice";
 import { bridge } from "../lib/bridge";
@@ -30,7 +38,9 @@ function save(key: string, value: unknown) {
   }
 }
 
+const BRIEFING = "Fais-moi le briefing du jour";
 const SOLO_SUGGESTIONS = [
+  BRIEFING,
   "Organise ma journée de demain",
   "Une idée de dîner rapide pour ce soir",
   "5 astuces pour réduire ma facture d'énergie",
@@ -177,6 +187,8 @@ export function StandaloneView({ initialStatus }: { initialStatus: AssistantStat
   const [voiceOn, setVoiceOn] = useState(() => load(VOICE_KEY, false));
   const speech = useSpeech();
   const now = useClock(15_000);
+  const day = useWeather();
+  const todo = useTasks();
   const reqRef = useRef<string | null>(null);
 
   useEffect(() => save(STORE_KEY, messages), [messages]);
@@ -208,7 +220,7 @@ export function StandaloneView({ initialStatus }: { initialStatus: AssistantStat
       setStreamText("");
 
       const turns: ChatTurn[] = history.map((m) => ({ role: m.role, content: m.content }));
-      const res = await bridge.chat(id, turns);
+      const res = await bridge.chat(id, turns, buildDayContext({ city: day.city, weather: day.weather, tasks: todo.tasks }));
       reqRef.current = null;
       setRequestId(null);
       setStreamText("");
@@ -230,7 +242,7 @@ export function StandaloneView({ initialStatus }: { initialStatus: AssistantStat
         { id: newId(), role: "assistant", content: `⚠️ ${res.error ?? "Erreur inconnue"}`, tool_calls: [], created_at: new Date().toISOString() },
       ]);
     },
-    [messages, speech, voiceOn],
+    [messages, speech, voiceOn, day.city, day.weather, todo.tasks],
   );
 
   if (!hasKey || editingKey) {
@@ -271,54 +283,76 @@ export function StandaloneView({ initialStatus }: { initialStatus: AssistantStat
         </div>
       </header>
 
-      <main className="main solo">
-        <section className="card grow solo-card" style={{ padding: 0 }}>
-          <div className="solo-actions">
-            {requestId && (
-              <button className="btn btn-ghost" style={{ padding: "7px 14px" }} onClick={() => void bridge.cancelChat(requestId)}>
-                <Square size={13} fill="currentColor" /> Arrêter
+      <main className="main">
+        <div className="dashboard">
+          <div className="column">
+            <TodayCard />
+            <SunMoonCard city={day.city} />
+            <HolidaysCard />
+          </div>
+
+          <section className="card grow assistant-card" style={{ padding: 0 }}>
+            <div className="solo-actions">
+              {requestId && (
+                <button className="btn btn-ghost" style={{ padding: "7px 14px" }} onClick={() => void bridge.cancelChat(requestId)}>
+                  <Square size={13} fill="currentColor" /> Arrêter
+                </button>
+              )}
+              {!requestId && shown.length > 0 && (
+                <button className="btn btn-ghost" style={{ padding: "7px 14px" }} onClick={() => void send(BRIEFING)}>
+                  <Sparkles size={14} /> Briefing
+                </button>
+              )}
+              <button
+                className="icon-btn"
+                title={voiceOn ? "Couper la lecture des réponses" : "Lire les réponses à voix haute"}
+                onClick={() => {
+                  if (voiceOn) speech.cancel();
+                  setVoiceOn(!voiceOn);
+                }}
+              >
+                {voiceOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
               </button>
-            )}
-            <button
-              className="icon-btn"
-              title={voiceOn ? "Couper la lecture des réponses" : "Lire les réponses à voix haute"}
-              onClick={() => {
-                if (voiceOn) speech.cancel();
-                setVoiceOn(!voiceOn);
-              }}
-            >
-              {voiceOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
-            <button
-              className="icon-btn"
-              title="Nouvelle conversation"
-              disabled={Boolean(requestId)}
-              onClick={() => {
-                speech.cancel();
-                setMessages([]);
-              }}
-            >
-              <MessageSquarePlus size={16} />
-            </button>
-          </div>
-          <div className="hero" style={shown.length ? { paddingBottom: 6 } : undefined}>
-            <Orb state={orbState} size={shown.length ? 110 : 210} />
-            {shown.length === 0 && <div className="hero-greeting">{greeting()}, je suis <em>Aide</em>.</div>}
-            <div className="hero-status">
-              {waiting ? "Je réfléchis…" : streamText ? "Je vous réponds…" : "Posez-moi une question, je suis prêt."}
+              <button
+                className="icon-btn"
+                title="Nouvelle conversation"
+                disabled={Boolean(requestId)}
+                onClick={() => {
+                  speech.cancel();
+                  setMessages([]);
+                }}
+              >
+                <MessageSquarePlus size={16} />
+              </button>
             </div>
+            <div className="hero" style={shown.length ? { paddingBottom: 0, paddingTop: 10 } : undefined}>
+              <HoloOrb state={orbState} size={shown.length ? 150 : 300} />
+              {shown.length === 0 && (
+                <div className="hero-greeting">
+                  {greeting()}, je suis <em>Aide</em>.
+                </div>
+              )}
+              <div className="hero-status">
+                {waiting ? "Je réfléchis…" : streamText ? "Je vous réponds…" : "Posez-moi une question, je suis prêt."}
+              </div>
+            </div>
+            <Chat
+              messages={shown}
+              thinking={waiting}
+              recording={false}
+              draft={draft}
+              onDraft={setDraft}
+              onSend={(t) => void send(t)}
+              hint="Aide connaît la météo, le calendrier et vos tâches affichés ici."
+              suggestions={SOLO_SUGGESTIONS}
+            />
+          </section>
+
+          <div className="column">
+            <WeatherCard city={day.city} weather={day.weather} error={day.error} onCity={(c) => void day.setCity(c)} />
+            <TasksCard tasks={todo.tasks} onAdd={todo.add} onToggle={todo.toggle} onRemove={todo.remove} />
           </div>
-          <Chat
-            messages={shown}
-            thinking={waiting}
-            recording={false}
-            draft={draft}
-            onDraft={setDraft}
-            onSend={(t) => void send(t)}
-            hint="La maison connectée pourra être ajoutée plus tard depuis les réglages."
-            suggestions={SOLO_SUGGESTIONS}
-          />
-        </section>
+        </div>
       </main>
 
       {settings && (

@@ -29,13 +29,32 @@ export interface AssistantStatus {
   keyPersistent: boolean;
 }
 
+export interface City {
+  name: string;
+  region: string;
+  lat: number;
+  lon: number;
+}
+
+export interface Weather {
+  updatedAt: string;
+  current: { temp: number; feelsLike: number; humidity: number; wind: number; code: number; isDay: boolean };
+  hours: { time: string; temp: number; rain: number; code: number }[];
+  days: { date: string; code: number; max: number; min: number; rain: number; uv: number }[];
+}
+
 export interface AideDesktopApi {
   platform: string;
   getStatus(): Promise<AssistantStatus>;
   setMode(mode: AppMode): Promise<void>;
   setApiKey(key: string): Promise<ApiResult<null>>;
   clearApiKey(): Promise<void>;
-  chat(requestId: string, turns: ChatTurn[]): Promise<ApiResult<{ text: string; truncated: boolean }>>;
+  /** `dayContext` : informations du jour (météo, tâches…) transmises à l'assistant comme données. */
+  chat(requestId: string, turns: ChatTurn[], dayContext?: string): Promise<ApiResult<{ text: string; truncated: boolean }>>;
+  getCity(): Promise<City | null>;
+  setCity(city: City): Promise<void>;
+  searchCity(name: string): Promise<ApiResult<City[]>>;
+  getWeather(lat: number, lon: number): Promise<ApiResult<Weather>>;
   cancelChat(requestId: string): Promise<void>;
   onChatText(listener: (requestId: string, text: string) => void): () => void;
   getServerUrl(): Promise<string>;
@@ -59,6 +78,10 @@ export const IPC = {
   chat: "assistant:chat",
   cancelChat: "assistant:cancel",
   chatText: "assistant:text",
+  getCity: "day:get-city",
+  setCity: "day:set-city",
+  searchCity: "day:search-city",
+  getWeather: "day:weather",
   getServerUrl: "config:get-server",
   setServerUrl: "config:set-server",
   session: "auth:session",
