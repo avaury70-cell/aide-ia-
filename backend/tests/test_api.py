@@ -138,3 +138,34 @@ async def test_invalid_cron_rejected(client, admin):
         "name": "x", "trigger": {"type": "time", "cron": "tous les jours"},
         "actions": [{"type": "notify", "message": "m"}]})
     assert r.status_code == 422
+
+
+async def test_voice_transcription(client, admin):
+    from app.services import speech
+
+    class FakeTranscriber:
+        def transcribe(self, audio: bytes, language: str) -> str:
+            assert audio == b"fake-webm" and language == "fr"
+            return "allume le salon"
+
+    speech.set_transcriber(FakeTranscriber())
+    try:
+        r = await client.post("/voice/transcribe", headers=admin,
+                              files={"audio": ("voix.webm", b"fake-webm", "audio/webm")})
+        assert r.status_code == 200, r.text
+        assert r.json() == {"text": "allume le salon"}
+        r = await client.post("/voice/transcribe", files={"audio": ("voix.webm", b"x", "audio/webm")})
+        assert r.status_code == 401
+    finally:
+        speech.set_transcriber(None)
+
+
+async def test_voice_unavailable_without_whisper(client, admin, monkeypatch):
+    from app.services import speech
+
+    def unavailable(*args, **kwargs):
+        raise speech.SpeechUnavailableError("Transcription indisponible")
+
+    monkeypatch.setattr(speech, "WhisperTranscriber", unavailable)
+    r = await client.post("/voice/transcribe", headers=admin, files={"audio": ("v.webm", b"abc", "audio/webm")})
+    assert r.status_code == 503

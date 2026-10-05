@@ -4,8 +4,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..db import get_db
-from ..models import PushToken, User, UserRole
-from ..schemas import LoginIn, PushTokenIn, RegisterIn, TokenOut, UserOut
+from ..models import User, UserRole
+from ..schemas import LoginIn, RegisterIn, TokenOut, UserOut
 from ..security import create_access_token, current_user, hash_password, user_from_token, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -45,16 +45,3 @@ async def login(body: LoginIn, db: AsyncSession = Depends(get_db)) -> TokenOut:
 @router.get("/me", response_model=UserOut)
 async def me(user: User = Depends(current_user)) -> User:
     return user
-
-
-@router.post("/push-token", status_code=204)
-async def register_push_token(
-    body: PushTokenIn, user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
-) -> None:
-    existing = await db.scalar(select(PushToken).where(PushToken.token == body.token))
-    if existing:
-        existing.user_id = user.id
-        existing.platform = body.platform
-    else:
-        db.add(PushToken(user_id=user.id, token=body.token, platform=body.platform))
-    await db.commit()

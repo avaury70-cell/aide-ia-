@@ -1,0 +1,2 @@
+# Transcription vocale locale (optionnelle, ~500 Mo de modèle téléchargé au premier usage)
+faster-whisper>=1.1

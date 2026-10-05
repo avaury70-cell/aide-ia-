@@ -142,7 +142,7 @@ TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "notify_household",
-        "description": "Envoie une notification push à tous les membres du foyer.",
+        "description": "Envoie une notification (affichée sur les ordinateurs du foyer où Aide est ouvert).",
         "input_schema": {
             "type": "object",
             "properties": {"title": {"type": "string"}, "message": {"type": "string"}},

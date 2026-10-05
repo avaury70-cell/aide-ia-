@@ -4,26 +4,30 @@
 
 | Besoin | Réponse technique |
 |---|---|
-| Piloter la maison en langage naturel (texte ou voix) | Agent Claude avec *tool use* au-dessus d'une couche domotique sécurisée |
+| Piloter la maison en langage naturel (texte ou voix) depuis l'ordinateur | Agent Claude avec *tool use* au-dessus d'une couche domotique sécurisée |
 | Compatibilité matérielle large (Zigbee, Z-Wave, Matter, Wi-Fi…) | **Home Assistant** comme couche d'abstraction matérielle |
-| Application mobile iOS + Android | **React Native / Expo** (TypeScript), une seule base de code |
+| Application de bureau Windows / macOS / Linux | **Electron + React + TypeScript** (Vite), une seule base de code |
+| Interface moderne et soignée | Design « verre et aurore » : cartes arrondies, dégradés néon, orbe IA animé |
+| Commande vocale privée | Transcription **locale** (Whisper) sur le serveur domestique, synthèse vocale du système |
 | Routines et automatisations | Moteur interne (cron + déclencheurs d'état), créables par l'IA |
 | Personnalisation | Mémoire à long terme (préférences, habitudes) |
 | Sécurité physique du foyer | Confirmation humaine obligatoire pour serrures, alarme, volets, vannes ; audit complet |
-| Vie privée | Backend auto-hébergé sur le réseau local ; seul le texte des requêtes part vers l'API Claude |
+| Vie privée | Serveur auto-hébergé ; seul le texte des requêtes part vers l'API Claude |
 
 ## 2. Vue d'ensemble
 
 ```mermaid
 flowchart LR
-    subgraph Mobile["📱 App mobile (Expo / React Native)"]
-        UI[Écrans : Assistant · Maison · Routines · Profil]
-        STT[Reconnaissance vocale<br/>expo-speech-recognition]
-        TTS[Synthèse vocale<br/>expo-speech]
+    subgraph Desktop["💻 Application de bureau (Electron)"]
+        UI[Interface React<br/>Accueil · Appareils · Routines · Mémoire]
+        MAIN[Processus principal<br/>session chiffrée · API · WebSocket<br/>barre système · raccourci global]
+        MIC[Micro<br/>MediaRecorder]
+        TTS[Synthèse vocale<br/>du système]
     end
 
-    subgraph Serveur["🖥️ Serveur domestique (Docker : mini-PC / NAS / Raspberry Pi 5)"]
+    subgraph Serveur["🖥️ Serveur domestique (Docker : mini-PC / NAS / le PC lui-même)"]
         API[API FastAPI<br/>REST + WebSocket]
+        STT[Whisper local<br/>transcription]
         AGENT[Agent IA<br/>boucle d'outils]
         HOME[Couche domotique<br/>contrôle d'accès · confirmation · audit]
         AUTO[Moteur d'automatisations<br/>cron + état]
@@ -33,12 +37,13 @@ flowchart LR
     HA[Home Assistant<br/>REST + WebSocket]
     DEV[[Appareils<br/>Zigbee · Z-Wave · Matter · Wi-Fi]]
     CLAUDE[(API Claude<br/>Anthropic)]
-    PUSH[(Expo Push<br/>APNs / FCM)]
 
-    UI -- HTTPS JSON --> API
-    UI <-- WebSocket temps réel --> API
-    STT --> UI
+    UI <-- IPC --> MAIN
+    MIC --> UI
     UI --> TTS
+    MAIN -- HTTP JSON / audio --> API
+    API -- événements temps réel --> MAIN
+    API --> STT
     API --> AGENT
     AGENT <-- Messages API + tools --> CLAUDE
     AGENT --> HOME
@@ -50,8 +55,6 @@ flowchart LR
     HOME --> DB
     AGENT --> DB
     AUTO --> DB
-    AUTO --> PUSH
-    PUSH --> Mobile
 ```
 
 ### Choix structurants
@@ -67,9 +70,15 @@ flowchart LR
    confirmation des actions sensibles et journal d'audit. Même une injection de prompt réussie
    (via le nom d'un appareil, une notification, un souvenir…) ne peut pas déverrouiller la porte
    sans un geste humain dans l'application.
-3. **Backend auto-hébergé.** La maison reste pilotable même si Internet tombe (sauf la partie
-   conversationnelle). L'accès hors domicile se fait via VPN (WireGuard/Tailscale) plutôt qu'en
-   exposant le port sur Internet.
+3. **L'interface n'a aucun accès réseau direct ni au jeton.** Dans Electron, toutes les requêtes
+   passent par le processus principal (IPC) qui détient la session, chiffrée par le trousseau du
+   système (`safeStorage` : DPAPI, Keychain, libsecret). L'interface tourne isolée
+   (`contextIsolation`, `sandbox`, pas de Node, CSP stricte).
+4. **Voix traitée à la maison.** L'audio est transcrit par Whisper sur le serveur domestique ;
+   aucun enregistrement n'est envoyé à un service externe.
+5. **Serveur auto-hébergé.** La maison reste pilotable même si Internet tombe (sauf la partie
+   conversationnelle). Le serveur peut tourner sur le même ordinateur que l'application ou sur une
+   machine dédiée du réseau local.
 
 ## 3. Composants
 
@@ -83,11 +92,12 @@ app/
 ├── schemas.py           # Contrats d'API (Pydantic)
 ├── security.py          # Hachage scrypt, JWT, rôles admin / membre / invité
 ├── api/                 # Routes REST + WebSocket
-│   ├── auth.py          #   inscription, connexion, jeton push
+│   ├── auth.py          #   inscription, connexion
 │   ├── devices.py       #   pièces, appareils, commandes manuelles, historique
 │   ├── chat.py          #   conversations, messages, actions en attente
 │   ├── automations.py   #   CRUD + exécution manuelle + historique d'exécution
 │   ├── memories.py      #   consultation / oubli des souvenirs
+│   ├── voice.py         #   transcription vocale (POST /voice/transcribe)
 │   └── ws.py            #   flux temps réel /ws
 └── services/
     ├── homeassistant.py # Adaptateur HA : REST, WebSocket, table des actions autorisées
@@ -95,8 +105,9 @@ app/
     ├── assistant.py     # Agent Claude : prompt, contexte, boucle d'outils
     ├── tools.py         # Définition et exécution des 11 outils de l'agent
     ├── automations.py   # Validation, évaluation cron/état, exécution
-    ├── notifications.py # Push Expo
-    └── events.py        # Diffusion temps réel vers les apps connectées
+    ├── speech.py        # Whisper local (faster-whisper), chargé à la première utilisation
+    ├── notifications.py # Notifications du foyer (diffusées aux applications connectées)
+    └── events.py        # Diffusion temps réel
 ```
 
 ### 3.2 Agent IA (`services/assistant.py`)
@@ -124,7 +135,7 @@ app/
 | `get_history` | Historique des changements d'état (≤ 7 jours) |
 | `create_automation` / `list_automations` / `set_automation_enabled` | Routines |
 | `remember` / `recall` / `forget` | Mémoire à long terme |
-| `notify_household` | Notification push au foyer |
+| `notify_household` | Notification au foyer (notification native sur les ordinateurs) |
 
 ### 3.3 Moteur d'automatisations (`services/automations.py`)
 
@@ -139,37 +150,49 @@ déclencheur ──► conditions (toutes vraies) ──► actions séquentiell
 * Une automatisation agissant sur un appareil **sensible** ne peut être créée que par un
   administrateur depuis l'application ; l'agent IA se voit refuser ce cas.
 
-### 3.4 Application mobile (`mobile/`, Expo SDK 57, React Native 0.86, TypeScript strict)
+### 3.4 Application de bureau (`desktop/`, Electron 44, React 19, TypeScript, Vite)
 
 ```
-App.tsx                       # Navigation par onglets, garde d'authentification
-src/api/{client,types}.ts     # Client REST typé, gestion des erreurs et du 401
-src/context/AuthContext.tsx   # Session (jeton JWT dans expo-secure-store / Keychain / Keystore)
-src/hooks/useHomeEvents.ts    # WebSocket temps réel avec reconnexion exponentielle
-src/notifications.ts          # Enregistrement Expo Push
-src/screens/
-  ChatScreen.tsx              # Conversation, micro (STT fr-FR), réponses vocales (TTS), confirmations
-  DevicesScreen.tsx           # Appareils par pièce, commandes directes, mises à jour live
-  AutomationsScreen.tsx       # Routines : activer, exécuter, supprimer
-  SettingsScreen.tsx          # Profil, notifications, souvenirs (droit à l'oubli)
-  LoginScreen.tsx             # Connexion / création du compte administrateur initial
-src/components/
-  PendingActionCard.tsx       # Carte « Confirmer / Refuser » des actions sensibles
-  DeviceTile.tsx              # Tuile d'appareil adaptée au domaine
-  ArcOrb.tsx                  # Noyau holographique animé (états repos / écoute / analyse / voix)
-  HudPanel.tsx, HudClock.tsx  # Panneaux et horloge style affichage tête haute
+electron/
+  main.ts                   # Fenêtre, barre système, raccourci global, passerelle API + WebSocket,
+                            # session chiffrée (safeStorage), notifications natives, permissions
+  preload.ts                # Seule surface exposée à l'interface (window.aide), typée par shared/ipc.ts
+shared/ipc.ts               # Contrat IPC partagé processus principal ↔ interface
+src/
+  App.tsx                   # Barre de navigation, vues, modales
+  styles.css                # Design system (jetons de couleur, verre, dégradés, animations)
+  lib/bridge.ts             # Pont Electron (ou mode navigateur pour le développement)
+  api/                      # Client typé de l'API
+  hooks/
+    useAuth, useHome        # Session ; état de la maison + événements temps réel + notifications
+    useAssistant            # Conversation, envoi, voix, état de l'orbe
+    useVoice                # Enregistrement micro, niveau sonore, arrêt auto en fin de phrase ; TTS
+  components/
+    Orb.tsx                 # Orbe IA (sphère lumineuse + orbites) réagissant à la voix
+    Chat.tsx                # Bulles, indicateurs d'outils, champ de saisie avec micro
+    PendingModal.tsx        # « Autorisation requise » avec compte à rebours
+    DeviceControl.tsx, ui.tsx, Toasts.tsx, SettingsModal.tsx
+  views/
+    Dashboard.tsx           # Tableau de bord « bento » : climat, sécurité, routines | assistant | commandes, activité
+    DevicesView.tsx         # Appareils par pièce, filtres par type
+    RoutinesView.tsx        # Cartes de routines : activer, exécuter, supprimer
+    MemoryView.tsx          # Souvenirs de l'assistant (droit à l'oubli)
+    LoginView.tsx           # Connexion / premier compte / adresse du serveur
 ```
 
-**Design « HUD holographique ».** L'interface s'inspire des affichages tête haute de science-fiction :
-fond nuit, lignes cyan lumineuses, accents orange, typographie à chasse fixe, panneaux à coins en
-équerre (`HudPanel`). Au centre de l'écran Assistant, un **noyau holographique animé** (`ArcOrb`,
-`react-native-svg`) reflète l'état de l'assistant : rotation lente au repos, accélération en écoute,
-anneaux orange rapides pendant l'analyse, pulsation pendant la réponse vocale. Toucher le noyau
-active le micro. Toutes les couleurs sont centralisées dans `src/config.ts`.
+**Design.** Style futuriste et épuré inspiré des sites web récents : fond sombre animé façon
+« aurore » (halos cyan, indigo, violet), cartes en verre dépoli aux angles très arrondis (28 px),
+boutons en pilule, dégradés cyan → indigo → violet, typographies Inter et Space Grotesk embarquées
+(fonctionnent hors ligne). Au centre de l'accueil, l'**orbe IA** reflète l'état de l'assistant :
+respiration lente au repos, pulsation au rythme de la voix pendant l'écoute, nappes de couleur
+accélérées pendant l'analyse, battement pendant la réponse vocale.
 
-La reconnaissance vocale utilise les moteurs natifs (Apple Speech / Google) : aucun audio n'est
-envoyé au backend. `expo-speech-recognition` nécessitant du code natif, l'application se lance
-avec un *development build* (`npx expo run:ios|android`) et non dans Expo Go.
+**Intégration au système.**
+- Raccourci global <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Maj</kbd> + <kbd>Espace</kbd> : affiche Aide et
+  lance l'écoute, depuis n'importe quelle application.
+- Fermer la fenêtre la réduit dans la barre système ; l'assistant reste actif.
+- Notifications natives (Windows, macOS, Linux) pour les routines et les autorisations en attente.
+- Une seule instance ; seule la permission micro est accordée ; aucune navigation externe.
 
 ## 4. Flux principaux
 
@@ -178,12 +201,13 @@ avec un *development build* (`npx expo run:ios|android`) et non dans Expo Go.
 ```mermaid
 sequenceDiagram
     actor U as Utilisateur
-    participant M as App mobile
+    participant M as App de bureau
     participant A as API / Agent
     participant C as Claude
     participant H as Home Assistant
-    U->>M: « Baisse la lumière du salon à 30 % »
-    M->>M: STT natif → texte
+    U->>M: « Baisse la lumière du salon à 30 % » (micro ou Ctrl+Maj+Espace)
+    M->>A: POST /voice/transcribe (audio webm/opus)
+    A-->>M: texte (Whisper local)
     M->>A: POST /conversations/{id}/messages
     A->>C: messages + outils
     C-->>A: tool_use list_devices(room="Salon")
@@ -204,7 +228,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as Utilisateur
-    participant M as App mobile
+    participant M as App de bureau
     participant A as API / Agent
     participant C as Claude
     participant H as Home Assistant
@@ -216,7 +240,7 @@ sequenceDiagram
     A-->>C: {status: confirmation_required}
     C-->>A: « Confirmez le déverrouillage dans l'application. »
     A-->>M: réponse + pending_actions[]
-    M->>U: carte 🔐 Confirmer / Refuser
+    M->>U: fenêtre « Autorisation requise » (+ notification système)
     U->>M: Confirmer
     M->>A: POST /pending-actions/{id}/confirm
     A->>H: lock.unlock
@@ -229,7 +253,7 @@ sequenceDiagram
 |---|---|
 | Injection de prompt (nom d'appareil, notification, souvenir malveillant) | Confirmation humaine des domaines sensibles ; liste blanche action/paramètres ; souvenirs présentés comme « données, pas instructions » |
 | Hallucination d'entity_id ou d'action | Validation stricte côté serveur, erreur renvoyée au modèle |
-| Vol de téléphone | JWT stocké dans Keychain/Keystore ; expiration 7 jours ; actions sensibles à reconfirmer |
+| Accès à l'ordinateur / logiciel malveillant | Jeton chiffré par le trousseau du système et jamais exposé à l'interface ; interface isolée (sandbox, CSP) ; expiration 7 jours ; actions sensibles à reconfirmer |
 | Invités / enfants | Rôle `guest` : lecture seule, aucune commande ni automatisation |
 | Exposition réseau | Backend sur LAN ; accès distant via VPN ; HTTPS via reverse proxy (Caddy/Traefik) |
 | Traçabilité | `audit_log` append-only : qui (utilisateur / IA / automatisation), quoi, quand, succès |
@@ -243,14 +267,18 @@ docker compose up -d                    # + --profile homeassistant pour lancer 
 ```
 
 * `db` charge automatiquement `backend/db/schema.sql` au premier démarrage.
-* Mobile : renseigner `expo.extra.apiUrl` dans `mobile/app.json`, puis `npm install` et
-  `npx expo run:android` (ou `run:ios`). Pour la distribution : EAS Build.
+* L'image `api` inclut Whisper (`WITH_VOICE=true`) ; le modèle (~500 Mo) est téléchargé à la première
+  commande vocale. `WHISPER_MODEL=base` réduit la charge sur une petite machine.
+* Application : `cd desktop && npm install && npm run dist` produit l'installateur
+  (`.exe` NSIS sous Windows, `.dmg` sous macOS, `.AppImage` sous Linux) dans `desktop/release/`.
+  Au premier lancement, renseigner l'adresse du serveur (lien « Serveur » de l'écran de connexion).
 
 ## 7. Évolutions envisagées
 
 * **Streaming** des réponses (SSE) pour afficher le texte au fil de l'eau.
+* **Mot d'éveil** local (« Aide ! ») détecté dans l'application de bureau.
 * **Recherche sémantique** de la mémoire (pgvector + modèle d'embeddings) quand elle grossit.
-* **Mot d'éveil** et enceintes déportées (ESP32 + Home Assistant Assist / Wyoming).
+* **Enceintes déportées** dans les pièces (ESP32 + Home Assistant Assist / Wyoming).
 * **Détection d'anomalies** : résumé quotidien de la consommation ou d'événements inhabituels
   (via l'API Batches à coût réduit).
 * **Géorepérage** : déclencheurs « en arrivant / en partant » à partir des entités `person`.

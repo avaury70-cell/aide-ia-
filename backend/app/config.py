@@ -29,7 +29,14 @@ class Settings(BaseSettings):
 
     automation_tick_seconds: int = 30
 
-    # Origines autorisées (CORS) — utile uniquement pour la version web de l'app en développement.
+    # Transcription vocale locale (faster-whisper). "small" : bon compromis qualité/CPU en français.
+    whisper_model: str = "small"
+    whisper_device: str = "cpu"
+    whisper_compute_type: str = "int8"
+    voice_max_bytes: int = 10 * 1024 * 1024
+
+    # Origines autorisées (CORS) — uniquement pour ouvrir l'interface dans un navigateur.
+    # L'application de bureau passe par le processus principal Electron et n'en a pas besoin.
     cors_origins: list[str] = []
 
 

@@ -10,7 +10,6 @@ erDiagram
     users ||--o{ conversations : "possède"
     users ||--o{ memories : "souvenirs personnels"
     users ||--o{ pending_actions : "doit valider"
-    users ||--o{ push_tokens : "appareils mobiles"
     users ||--o{ automations : "propriétaire"
     users ||--o{ audit_log : "auteur"
     conversations ||--o{ messages : "contient"
@@ -107,12 +106,6 @@ erDiagram
         varchar status
         jsonb detail
     }
-    push_tokens {
-        uuid id PK
-        uuid user_id FK
-        varchar token UK
-        varchar platform
-    }
     audit_log {
         bigserial id PK
         uuid user_id FK
@@ -130,7 +123,6 @@ erDiagram
 | Table | Rôle | Volume attendu |
 |---|---|---|
 | `users` | Habitants et invités, rôle `admin` / `member` / `guest` | Quelques lignes |
-| `push_tokens` | Jetons Expo Push par téléphone | Quelques lignes |
 | `rooms` | Pièces (organisation de l'app et filtre `list_devices`) | ~10–30 |
 | `devices` | Miroir des entités HA utiles + réglages propres à l'assistant | ~50–500 |
 | `device_events` | Historique des changements d'état | **Élevé** : 10⁴–10⁵ / jour |
@@ -179,4 +171,4 @@ erDiagram
 * **Rétention** : purger `device_events` au-delà de 90 jours (tâche cron
   `DELETE FROM device_events WHERE occurred_at < now() - interval '90 days'`) ou partitionner par mois.
 * **RGPD / vie privée** : les souvenirs sont consultables et supprimables depuis l'app ; la
-  suppression d'un utilisateur supprime en cascade ses conversations, souvenirs et jetons.
+  suppression d'un utilisateur supprime en cascade ses conversations, souvenirs.

@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import auth, automations, chat, devices, memories, ws
+from .api import auth, automations, chat, devices, memories, voice, ws
 from .config import get_settings
 from .db import SessionLocal, init_models
 from .services.automations import AutomationEngine
@@ -58,7 +58,7 @@ if get_settings().cors_origins:
     app.add_middleware(
         CORSMiddleware, allow_origins=get_settings().cors_origins, allow_methods=["*"], allow_headers=["*"]
     )
-for r in (auth.router, devices.router, chat.router, automations.router, memories.router, ws.router):
+for r in (auth.router, devices.router, chat.router, automations.router, memories.router, voice.router, ws.router):
     app.include_router(r)
 
 

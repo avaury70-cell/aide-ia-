@@ -1,28 +1,30 @@
 # Aide — assistant personnel intelligent pour la maison connectée
 
-Application mobile (iOS / Android) + serveur domestique qui permet de piloter son domicile en
-langage naturel, à la voix ou par écrit, grâce à un agent IA (Claude) connecté à Home Assistant.
+Application de bureau (Windows, macOS, Linux) + serveur domestique pour piloter son domicile en
+langage naturel, à la voix ou au clavier, grâce à un agent IA (Claude) connecté à Home Assistant.
+
+![Accueil](docs/screenshots/02-accueil.png)
 
 <p align="center">
-  <img src="docs/screenshots/01-connexion.png" width="200" alt="Connexion" />
-  <img src="docs/screenshots/02-assistant.png" width="200" alt="Assistant" />
-  <img src="docs/screenshots/03-maison.png" width="200" alt="Maison" />
-  <img src="docs/screenshots/04-routines.png" width="200" alt="Routines" />
+  <img src="docs/screenshots/01-connexion.png" width="32%" alt="Connexion" />
+  <img src="docs/screenshots/04-appareils.png" width="32%" alt="Appareils" />
+  <img src="docs/screenshots/05-routines.png" width="32%" alt="Routines" />
 </p>
 
 > « Baisse le salon à 30 % », « Il fait combien dans la chambre ? », « Tous les soirs à 23 h,
-> éteins tout et ferme les volets », « Rappelle-toi que je préfère 19 °C la nuit ».
+> éteins tout et ferme les volets », « Retiens que je préfère 19 °C la nuit ».
 
 ## Fonctionnalités
 
-- 💬 **Assistant conversationnel** (texte + voix fr-FR, réponses lues à voix haute) qui agit via 11 outils
-- 🏠 **Pilotage** de tout ce que gère Home Assistant : lumières, prises, chauffage, volets, serrures, alarme, médias, aspirateur, scènes…
-- 🔐 **Sécurité physique** : serrures / alarme / volets / vannes exigent une confirmation dans l'app, même si l'IA le demande
-- ⚙️ **Automatisations** horaires (cron) ou sur événement, créées à la main ou par l'IA
+- 💬 **Assistant conversationnel** qui agit sur la maison via 11 outils, réponses lues à voix haute
+- 🎙️ **Commande vocale privée** : transcription locale (Whisper) sur votre serveur, raccourci global <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Maj</kbd>+<kbd>Espace</kbd>
+- 🏠 **Pilotage** de tout ce que gère Home Assistant : lumières, prises, chauffage, volets, serrures, alarme, médias, scènes…
+- 🔐 **Sécurité physique** : serrures, alarme, volets et vannes exigent votre autorisation, même si l'IA le demande
+- ⚙️ **Routines** horaires ou sur événement, créées à la main ou en le demandant à l'assistant
 - 🧠 **Mémoire** des préférences et habitudes, consultable et effaçable
-- 📡 **Temps réel** (WebSocket) et **notifications push**
+- 🔔 **Temps réel** et **notifications natives** du système, icône dans la barre système
 - 👥 **Rôles** administrateur / membre / invité, **journal d'audit** de toutes les actions
-- 🛰️ **Interface HUD holographique** avec noyau animé qui réagit à l'écoute, l'analyse et la voix
+- ✨ **Interface futuriste** : cartes de verre arrondies, fond aurore animé, orbe IA qui réagit à la voix
 
 ## Documentation
 
@@ -35,15 +37,15 @@ langage naturel, à la voix ou par écrit, grâce à un agent IA (Claude) connec
 ## Arborescence
 
 ```
-backend/   API FastAPI, agent Claude, moteur d'automatisations, adaptateur Home Assistant
-mobile/    Application Expo / React Native (TypeScript)
-docs/      Architecture et base de données
+backend/   API FastAPI, agent Claude, Whisper, moteur d'automatisations, adaptateur Home Assistant
+desktop/   Application Electron + React + TypeScript
+docs/      Architecture, base de données, captures d'écran
 docker-compose.yml
 ```
 
 ## Démarrage rapide
 
-### 1. Serveur (sur une machine du réseau local)
+### 1. Serveur (sur l'ordinateur lui-même ou une machine du réseau local)
 
 ```bash
 cp backend/.env.example backend/.env
@@ -52,37 +54,33 @@ docker compose up -d                               # API sur :8000 + PostgreSQL
 # docker compose --profile homeassistant up -d     # si Home Assistant n'est pas déjà installé
 ```
 
-### 2. Application mobile
+### 2. Application de bureau
 
 ```bash
-cd mobile
+cd desktop
 npm install
-# Indiquer l'adresse du serveur dans app.json → expo.extra.apiUrl (ex. http://192.168.1.10:8000)
-npx expo run:android    # ou npx expo run:ios
+npm run dev     # développement (rechargement à chaud)
+npm run dist    # installateur : .exe (Windows), .dmg (macOS), .AppImage (Linux) dans desktop/release/
 ```
 
-La reconnaissance vocale nécessite un *development build* (pas Expo Go). Au premier lancement,
-« Première utilisation ? Configurer » crée le compte administrateur ; les autres membres sont
-ensuite invités par l'administrateur (`POST /auth/register`).
+Au premier lancement : lien **Serveur** pour indiquer l'adresse (par défaut `http://localhost:8000`),
+puis **Première utilisation ?** pour créer le compte administrateur.
 
 ### 3. Premiers pas
 
-1. Onglet **Maison** → *Synchroniser Home Assistant* importe les appareils.
+1. Onglet **Appareils** → *Synchroniser* importe les appareils de Home Assistant.
 2. Créer les pièces (`POST /rooms`) et y ranger les appareils (`PATCH /devices/{entity_id}`).
-3. Parler à l'assistant depuis l'onglet **Assistant** en touchant le noyau.
+3. Cliquer sur l'orbe ou appuyer sur <kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Espace</kbd> et parler.
 
 ## Développement
 
 ```bash
 cd backend
 python -m venv .venv && . .venv/bin/activate
-pip install -r requirements-dev.txt
-pytest                      # 17 tests (SQLite par défaut ; DATABASE_URL=postgresql+asyncpg://… pour PostgreSQL)
-uvicorn app.main:app --reload
-```
+pip install -r requirements-dev.txt          # + requirements-voice.txt pour la voix
+pytest                                       # 19 tests (SQLite ; DATABASE_URL=postgresql+asyncpg://… pour PostgreSQL)
+uvicorn app.main:app --reload                # documentation interactive : http://localhost:8000/docs
 
-Documentation interactive de l'API : http://localhost:8000/docs
-
-```bash
-cd mobile && npm run typecheck
+cd ../desktop
+npm run typecheck
 ```

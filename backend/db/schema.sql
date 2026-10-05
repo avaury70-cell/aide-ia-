@@ -18,15 +18,6 @@ CREATE TABLE users (
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
-CREATE TABLE push_tokens (
-    id         UUID PRIMARY KEY,
-    user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token      VARCHAR(255) NOT NULL UNIQUE,      -- ExponentPushToken[...]
-    platform   VARCHAR(20)  NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT now()
-);
-CREATE INDEX ix_push_tokens_user_id ON push_tokens(user_id);
-
 -- Inventaire de la maison ---------------------------------------------------------
 CREATE TABLE rooms (
     id    UUID PRIMARY KEY,

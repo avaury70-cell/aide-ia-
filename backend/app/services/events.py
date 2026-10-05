@@ -1,4 +1,4 @@
-"""Diffusion temps réel vers les applications mobiles connectées (WebSocket /ws)."""
+"""Diffusion temps réel vers les applications de bureau connectées (WebSocket /ws)."""
 
 import asyncio
 import json
@@ -17,12 +17,13 @@ class EventBroadcaster:
     def unsubscribe(self, q: asyncio.Queue[str]) -> None:
         self._queues.discard(q)
 
-    def publish(self, event_type: str, data: dict[str, Any]) -> None:
+    def publish(self, event_type: str, data: dict[str, Any]) -> int:
         message = json.dumps({"type": event_type, "data": data}, default=str)
         for q in list(self._queues):
             if q.full():  # client trop lent : on jette l'événement le plus ancien
                 q.get_nowait()
             q.put_nowait(message)
+        return len(self._queues)
 
 
 broadcaster = EventBroadcaster()

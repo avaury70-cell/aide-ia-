@@ -35,11 +35,6 @@ class TokenOut(BaseModel):
     user: UserOut
 
 
-class PushTokenIn(BaseModel):
-    token: str
-    platform: Literal["ios", "android", "web"]
-
-
 # --- Maison ------------------------------------------------------------------
 class RoomIn(BaseModel):
     name: str = Field(min_length=1, max_length=100)
