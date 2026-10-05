@@ -1,0 +1,41 @@
+# Déploiement domestique : à exécuter sur un mini-PC / NAS / Raspberry Pi 5 du réseau local.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aide
+      POSTGRES_PASSWORD: aide
+      POSTGRES_DB: aide
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aide"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://aide:aide@db:5432/aide
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  # Optionnel : Home Assistant dans la même pile (supprimer si déjà installé ailleurs).
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ha-config:/config
+    profiles: ["homeassistant"]
+
+volumes:
+  pgdata:
+  ha-config:

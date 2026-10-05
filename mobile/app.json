@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Aide",
+    "slug": "aide-maison",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#03070d",
+    "ios": {
+      "bundleIdentifier": "fr.aide.maison",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "fr.aide.maison"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Aide utilise le micro pour comprendre vos commandes vocales.",
+          "speechRecognitionPermission": "Aide transcrit votre voix pour piloter la maison."
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "http://192.168.1.10:8000"
+    }
+  }
+}
