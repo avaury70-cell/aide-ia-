@@ -50,3 +50,25 @@ def test_password_hashing():
     h = hash_password("secret123")
     assert verify_password("secret123", h)
     assert not verify_password("secret124", h)
+
+
+async def test_demo_home_applies_commands_and_emits_events():
+    import asyncio
+
+    from app.services.demo_home import DemoHome
+
+    home = DemoHome()
+    await home.call_service(resolve_action("light.cuisine", "turn_on", {"brightness_pct": 50}))
+    state = await home.get_state("light.cuisine")
+    assert state["state"] == "on" and state["attributes"]["brightness"] == 128
+
+    received = []
+    stop = asyncio.Event()
+
+    async def on_change(event):
+        received.append(event)
+        stop.set()
+
+    await asyncio.wait_for(home.listen_state_changes(on_change, stop), timeout=2)
+    assert received[0]["entity_id"] == "light.cuisine"
+    assert received[0]["old_state"]["state"] == "off"

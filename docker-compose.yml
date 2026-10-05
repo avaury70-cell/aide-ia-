@@ -21,6 +21,10 @@ services:
     env_file: ./backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://aide:aide@db:5432/aide
+      DATA_DIR: /srv/data
+    volumes:
+      - api-data:/srv/data          # clé de session générée + modèle vocal
+      - whisper-cache:/root/.cache/huggingface
     depends_on:
       db:
         condition: service_healthy
@@ -38,4 +42,6 @@ services:
 
 volumes:
   pgdata:
+  api-data:
+  whisper-cache:
   ha-config:

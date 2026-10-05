@@ -7,7 +7,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "sqlite+aiosqlite:///./aide.db"
-    jwt_secret: str = "dev-secret-change-me"
+    # Laisser vide : une clé aléatoire est générée et conservée dans data_dir au premier démarrage.
+    jwt_secret: str = ""
+    data_dir: str = "./data"
     jwt_ttl_minutes: int = 60 * 24 * 7
 
     anthropic_api_key: str | None = None
@@ -21,6 +23,8 @@ class Settings(BaseSettings):
     ha_token: str = ""
     # Désactive l'écoute WebSocket Home Assistant (tests, développement hors ligne).
     ha_listener_enabled: bool = True
+    # Maison simulée : permet d'essayer Aide sans Home Assistant ni objet connecté.
+    demo_mode: bool = False
 
     home_timezone: str = "Europe/Paris"
     # Domaines dont les actions exigent une confirmation explicite de l'utilisateur.

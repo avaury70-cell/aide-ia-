@@ -185,7 +185,12 @@ def get_home_client() -> HomeClient:
     global _client
     if _client is None:
         s = get_settings()
-        _client = HomeAssistantClient(s.ha_url, s.ha_token)
+        if s.demo_mode:
+            from .demo_home import DemoHome
+
+            _client = DemoHome()
+        else:
+            _client = HomeAssistantClient(s.ha_url, s.ha_token)
     return _client
 
 

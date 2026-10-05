@@ -2,7 +2,10 @@ import base64
 import hashlib
 import hmac
 import os
+import secrets
 import uuid
+from functools import lru_cache
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -16,6 +19,22 @@ from .models import User, UserRole
 
 _SCRYPT = {"n": 2**14, "r": 8, "p": 1, "dklen": 32}
 _bearer = HTTPBearer(auto_error=False)
+
+
+@lru_cache
+def jwt_secret() -> str:
+    """Clé de signature des jetons : JWT_SECRET si défini, sinon générée une fois et conservée."""
+    configured = get_settings().jwt_secret
+    if configured and configured != "change-me":
+        return configured
+    path = Path(get_settings().data_dir) / "jwt_secret"
+    if path.exists():
+        return path.read_text().strip()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    value = secrets.token_hex(32)
+    path.write_text(value)
+    path.chmod(0o600)
+    return value
 
 
 def hash_password(password: str) -> str:
@@ -39,12 +58,12 @@ def create_access_token(user_id: uuid.UUID) -> str:
     settings = get_settings()
     now = datetime.now(timezone.utc)
     payload = {"sub": str(user_id), "iat": now, "exp": now + timedelta(minutes=settings.jwt_ttl_minutes)}
-    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+    return jwt.encode(payload, jwt_secret(), algorithm="HS256")
 
 
 def decode_token(token: str) -> uuid.UUID:
     try:
-        payload = jwt.decode(token, get_settings().jwt_secret, algorithms=["HS256"])
+        payload = jwt.decode(token, jwt_secret(), algorithms=["HS256"])
         return uuid.UUID(payload["sub"])
     except (jwt.PyJWTError, KeyError, ValueError) as exc:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Jeton invalide") from exc

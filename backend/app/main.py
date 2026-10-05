@@ -11,7 +11,8 @@ from .config import get_settings
 from .db import SessionLocal, init_models
 from .services.automations import AutomationEngine
 from .services.home import record_state_change, sync_devices
-from .services.homeassistant import HomeAssistantClient, HomeAssistantError, get_home_client
+from .services.demo_home import assign_demo_rooms
+from .services.homeassistant import HomeAssistantError, get_home_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("aide")
@@ -20,8 +21,6 @@ log = logging.getLogger("aide")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    if not settings.database_url.startswith("sqlite") and settings.jwt_secret == "dev-secret-change-me":
-        raise RuntimeError("JWT_SECRET doit être défini en production")
     if settings.database_url.startswith("sqlite"):
         await init_models()
 
@@ -30,11 +29,15 @@ async def lifespan(app: FastAPI):
     tasks = [asyncio.create_task(engine.run_scheduler(stop), name="automation-scheduler")]
 
     client = get_home_client()
-    if settings.ha_listener_enabled and isinstance(client, HomeAssistantClient):
+    if settings.demo_mode:
+        log.info("MODE DÉMO : maison simulée, aucun Home Assistant requis")
+    if settings.ha_listener_enabled and hasattr(client, "listen_state_changes"):
         try:
             async with SessionLocal() as db:
                 created = await sync_devices(db)
-            log.info("Inventaire Home Assistant synchronisé (%d nouvelles entités)", created)
+                if settings.demo_mode:
+                    await assign_demo_rooms(db)
+            log.info("Inventaire de la maison synchronisé (%d nouvelles entités)", created)
         except HomeAssistantError as exc:
             log.warning("Synchronisation initiale impossible : %s", exc)
 
