@@ -2,7 +2,7 @@ import { LogOut, Server, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "../hooks/useAuth";
-import { bridge } from "../lib/bridge";
+import { bridge, isDesktop } from "../lib/bridge";
 
 const ROLES = { admin: "Administrateur", member: "Membre", guest: "Invité" } as const;
 
@@ -61,6 +61,18 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           />
         </div>
         {error && <div className="error-text">{error}</div>}
+        {isDesktop && (
+          <button
+            className="link-btn"
+            style={{ marginTop: 16, fontSize: 13 }}
+            onClick={async () => {
+              await bridge.setMode("standalone");
+              window.location.reload();
+            }}
+          >
+            Passer en mode « assistant seul » (sans maison)
+          </button>
+        )}
 
         <div className="modal-actions">
           <button className="btn btn-ghost" onClick={() => void logout()}>

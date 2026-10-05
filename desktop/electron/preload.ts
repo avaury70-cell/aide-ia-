@@ -5,6 +5,13 @@ import type { AideDesktopApi, IPC as IpcChannels } from "../shared/ipc";
 // Un preload « sandboxé » ne peut charger que le module electron : les canaux sont donc
 // recopiés ici, et le typage garantit qu'ils restent identiques à shared/ipc.ts.
 const IPC: typeof IpcChannels = {
+  getStatus: "app:status",
+  setMode: "app:set-mode",
+  setApiKey: "assistant:set-key",
+  clearApiKey: "assistant:clear-key",
+  chat: "assistant:chat",
+  cancelChat: "assistant:cancel",
+  chatText: "assistant:text",
   getServerUrl: "config:get-server",
   setServerUrl: "config:set-server",
   session: "auth:session",
@@ -21,6 +28,17 @@ const IPC: typeof IpcChannels = {
 // Seule surface exposée à l'interface : pas d'accès Node, pas de jeton d'authentification.
 const api: AideDesktopApi = {
   platform: process.platform,
+  getStatus: () => ipcRenderer.invoke(IPC.getStatus),
+  setMode: (mode) => ipcRenderer.invoke(IPC.setMode, mode),
+  setApiKey: (key) => ipcRenderer.invoke(IPC.setApiKey, key),
+  clearApiKey: () => ipcRenderer.invoke(IPC.clearApiKey),
+  chat: (requestId, turns) => ipcRenderer.invoke(IPC.chat, requestId, turns),
+  cancelChat: (requestId) => ipcRenderer.invoke(IPC.cancelChat, requestId),
+  onChatText: (listener) => {
+    const handler = (_e: IpcRendererEvent, requestId: string, text: string) => listener(requestId, text);
+    ipcRenderer.on(IPC.chatText, handler);
+    return () => ipcRenderer.removeListener(IPC.chatText, handler);
+  },
   getServerUrl: () => ipcRenderer.invoke(IPC.getServerUrl),
   setServerUrl: (url) => ipcRenderer.invoke(IPC.setServerUrl, url),
   session: () => ipcRenderer.invoke(IPC.session),

@@ -89,6 +89,14 @@ function createWebBridge(): AideDesktopApi {
 
   return {
     platform: "web",
+    // Le mode « assistant seul » (clé API) n'existe que dans l'application de bureau.
+    getStatus: async () => ({ mode: "server", hasKey: false, keyPersistent: false }),
+    setMode: async () => undefined,
+    setApiKey: async () => ({ ok: false, status: 501, error: "Disponible dans l'application de bureau" }),
+    clearApiKey: async () => undefined,
+    chat: async () => ({ ok: false, status: 501, error: "Disponible dans l'application de bureau" }),
+    cancelChat: async () => undefined,
+    onChatText: () => () => undefined,
     getServerUrl: async () => server(),
     setServerUrl: async (url) => store.set(SERVER, new URL(url).origin),
     session: async () => {

@@ -43,6 +43,19 @@ docs/      Architecture, base de données, captures d'écran
 docker-compose.yml
 ```
 
+## Installer Aide sur Windows (le plus simple)
+
+1. Lancez **`Aide-Installation-1.0.0.exe`** (pour le fabriquer : `cd desktop && npm install && npm run dist:win`,
+   le fichier apparaît dans `desktop/release/`).
+2. Windows peut afficher « Windows a protégé votre ordinateur » (l'application n'est pas signée) :
+   cliquez sur **Informations complémentaires**, puis **Exécuter quand même**.
+3. Suivez l'installation, puis ouvrez **Aide** depuis le bureau ou le menu Démarrer.
+4. Choisissez **Assistant seul** et collez votre clé API Anthropic
+   (à créer sur [console.anthropic.com](https://console.anthropic.com/settings/keys), avec un peu de crédit dans *Billing*).
+
+Le mode **Assistant seul** ne demande ni serveur ni Docker : l'application parle directement à Claude.
+La maison connectée s'ajoute plus tard depuis les réglages.
+
 ## Démarrage rapide
 
 ### 1. Serveur (sur l'ordinateur lui-même ou une machine du réseau local)
@@ -54,7 +67,7 @@ docker compose up -d                               # API sur :8000 + PostgreSQL
 # docker compose --profile homeassistant up -d     # si Home Assistant n'est pas déjà installé
 ```
 
-### 2. Application de bureau
+### 2. Application de bureau (mode maison connectée)
 
 ```bash
 cd desktop

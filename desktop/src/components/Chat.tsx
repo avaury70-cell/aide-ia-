@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { ChatMessage } from "../api/types";
 import { isDesktop } from "../lib/bridge";
 import { TOOL_LABELS } from "../lib/format";
+import { Markdown } from "../lib/markdown";
 
 const SUGGESTIONS = [
   "Quelle température fait-il dans le salon ?",
@@ -19,10 +20,13 @@ interface Props {
   draft: string;
   onDraft: (value: string) => void;
   onSend: (text: string) => void;
-  onMic: () => void;
+  /** Absent : pas de micro (mode assistant seul, sans transcription). */
+  onMic?: () => void;
+  hint?: string;
+  suggestions?: string[];
 }
 
-export function Chat({ messages, thinking, recording, draft, onDraft, onSend, onMic }: Props) {
+export function Chat({ messages, thinking, recording, draft, onDraft, onSend, onMic, hint, suggestions = SUGGESTIONS }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
   const [isMac] = useState(() => navigator.platform.toLowerCase().includes("mac"));
 
@@ -39,7 +43,7 @@ export function Chat({ messages, thinking, recording, draft, onDraft, onSend, on
     <div className="chat">
       {messages.length === 0 && !thinking ? (
         <div className="suggestions">
-          {SUGGESTIONS.map((s) => (
+          {suggestions.map((s) => (
             <button key={s} onClick={() => onSend(s)}>
               {s}
             </button>
@@ -49,7 +53,7 @@ export function Chat({ messages, thinking, recording, draft, onDraft, onSend, on
         <div className="messages">
           {messages.map((m) => (
             <div key={m.id} className={`msg ${m.role}`}>
-              {m.content}
+              {m.role === "assistant" ? <Markdown text={m.content} /> : m.content}
               {m.tool_calls.length > 0 && (
                 <div className="tools">
                   {m.tool_calls.map((t, i) => (
@@ -74,14 +78,18 @@ export function Chat({ messages, thinking, recording, draft, onDraft, onSend, on
       )}
 
       <form className="composer" onSubmit={submit}>
-        <button
-          type="button"
-          className={`mic-btn ${recording ? "live" : ""}`}
-          onClick={onMic}
-          title={recording ? "Arrêter" : "Parler"}
-        >
-          {recording ? <Square size={16} fill="currentColor" /> : <Mic size={19} />}
-        </button>
+        {onMic ? (
+          <button
+            type="button"
+            className={`mic-btn ${recording ? "live" : ""}`}
+            onClick={onMic}
+            title={recording ? "Arrêter" : "Parler"}
+          >
+            {recording ? <Square size={16} fill="currentColor" /> : <Mic size={19} />}
+          </button>
+        ) : (
+          <span style={{ width: 10 }} />
+        )}
         <input
           value={draft}
           onChange={(e) => onDraft(e.target.value)}
@@ -93,7 +101,9 @@ export function Chat({ messages, thinking, recording, draft, onDraft, onSend, on
           <Send size={17} />
         </button>
       </form>
-      {isDesktop && (
+      {hint ? (
+        <div className="composer-hint">{hint}</div>
+      ) : isDesktop && onMic && (
         <div className="composer-hint">
           Parlez à tout moment avec <kbd>{isMac ? "⌘" : "Ctrl"}</kbd> <kbd>⇧</kbd> <kbd>Espace</kbd>
         </div>

@@ -1,6 +1,7 @@
 import { Brain, House, LayoutDashboard, Workflow, WifiOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import type { AppMode, AssistantStatus } from "../shared/ipc";
 import { PendingModal } from "./components/PendingModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { Toasts } from "./components/Toasts";
@@ -14,6 +15,8 @@ import { DevicesView } from "./views/DevicesView";
 import { LoginView } from "./views/LoginView";
 import { MemoryView } from "./views/MemoryView";
 import { RoutinesView } from "./views/RoutinesView";
+import { StandaloneView } from "./views/StandaloneView";
+import { WelcomeView } from "./views/WelcomeView";
 
 const VIEWS = [
   { id: "home", label: "Accueil", icon: LayoutDashboard },
@@ -97,15 +100,38 @@ function Root() {
   );
 }
 
-export default function App() {
+function Aurora() {
   return (
-    <AuthProvider>
-      <div className="aurora" aria-hidden>
-        <span />
-        <span />
-        <span />
-      </div>
-      <Root />
-    </AuthProvider>
+    <div className="aurora" aria-hidden>
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
+export default function App() {
+  const [status, setStatus] = useState<AssistantStatus | null>(null);
+
+  useEffect(() => {
+    void bridge.getStatus().then(setStatus);
+  }, []);
+
+  const choose = async (mode: AppMode) => {
+    await bridge.setMode(mode);
+    setStatus(await bridge.getStatus());
+  };
+
+  return (
+    <>
+      <Aurora />
+      {status && status.mode === null && <WelcomeView onChoose={(m) => void choose(m)} />}
+      {status?.mode === "standalone" && <StandaloneView initialStatus={status} />}
+      {status?.mode === "server" && (
+        <AuthProvider>
+          <Root />
+        </AuthProvider>
+      )}
+    </>
   );
 }

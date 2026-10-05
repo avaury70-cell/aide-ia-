@@ -19,7 +19,8 @@ import {
 import fs from "node:fs";
 import path from "node:path";
 
-import { IPC, type ApiResult, type SessionUser } from "../shared/ipc";
+import { IPC, type ApiResult, type AppMode, type SessionUser } from "../shared/ipc";
+import { cancelChat, chat, checkApiKey } from "./assistant";
 
 const DEV_URL = process.env.AIDE_DEV_URL;
 const VOICE_SHORTCUT = "CommandOrControl+Shift+Space";
@@ -31,17 +32,45 @@ let quitting = false;
 // --- Configuration et session persistées ---------------------------------------------
 const configFile = () => path.join(app.getPath("userData"), "config.json");
 const tokenFile = () => path.join(app.getPath("userData"), "session.bin");
+const keyFile = () => path.join(app.getPath("userData"), "anthropic-key.bin");
 
-function readConfig(): { serverUrl: string } {
+interface AppConfig {
+  serverUrl: string;
+  mode: AppMode | null;
+}
+
+function readConfig(): AppConfig {
+  const defaults: AppConfig = { serverUrl: "http://localhost:8000", mode: null };
   try {
-    return { serverUrl: "http://localhost:8000", ...JSON.parse(fs.readFileSync(configFile(), "utf8")) };
+    return { ...defaults, ...JSON.parse(fs.readFileSync(configFile(), "utf8")) };
   } catch {
-    return { serverUrl: "http://localhost:8000" };
+    return defaults;
   }
 }
 
-function writeConfig(cfg: { serverUrl: string }) {
+function writeConfig(cfg: AppConfig) {
   fs.writeFileSync(configFile(), JSON.stringify(cfg, null, 2));
+}
+
+// Clé API Anthropic (mode assistant seul), chiffrée par le trousseau du système.
+let apiKey: string | null = null;
+
+function loadApiKey(): string | null {
+  try {
+    return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(fs.readFileSync(keyFile())) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveApiKey(value: string | null) {
+  apiKey = value;
+  try {
+    if (value && safeStorage.isEncryptionAvailable()) fs.writeFileSync(keyFile(), safeStorage.encryptString(value));
+    else fs.rmSync(keyFile(), { force: true });
+  } catch {
+    // la clé reste en mémoire jusqu'à la fermeture
+  }
 }
 
 let token: string | null = null;
@@ -243,6 +272,30 @@ function createTray() {
 }
 
 function registerIpc() {
+  ipcMain.handle(IPC.getStatus, () => ({
+    mode: readConfig().mode,
+    hasKey: Boolean(apiKey),
+    keyPersistent: safeStorage.isEncryptionAvailable(),
+  }));
+  ipcMain.handle(IPC.setMode, (_e, mode: AppMode) => {
+    if (mode !== "standalone" && mode !== "server") throw new Error("Mode inconnu");
+    writeConfig({ ...readConfig(), mode });
+  });
+  ipcMain.handle(IPC.setApiKey, async (_e, key: string) => {
+    const res = await checkApiKey(String(key));
+    if (res.ok) saveApiKey(String(key).trim());
+    return res;
+  });
+  ipcMain.handle(IPC.clearApiKey, () => saveApiKey(null));
+  ipcMain.handle(IPC.chat, (e, requestId: string, turns: unknown) => {
+    if (!apiKey) return { ok: false, status: 401, error: "Aucune clé API enregistrée." };
+    const sender = e.sender;
+    return chat(apiKey, String(requestId), turns, (text) => {
+      if (!sender.isDestroyed()) sender.send(IPC.chatText, requestId, text);
+    });
+  });
+  ipcMain.handle(IPC.cancelChat, (_e, requestId: string) => cancelChat(String(requestId)));
+
   ipcMain.handle(IPC.getServerUrl, () => readConfig().serverUrl);
   ipcMain.handle(IPC.setServerUrl, (_e, url: string) => {
     const parsed = new URL(url); // lève une erreur si l'URL est invalide
@@ -289,6 +342,7 @@ if (!app.requestSingleInstanceLock()) {
     if (process.platform === "darwin") await systemPreferences.askForMediaAccess("microphone");
 
     token = loadToken();
+    apiKey = loadApiKey();
     registerIpc();
     createWindow();
     createTray();
