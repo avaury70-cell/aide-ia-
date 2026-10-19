@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Faïence 2048</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+  /* Mise en page : une seule colonne centrée, plateau carré de faïence émaillée, chiffres du score au-dessus. */
+  :root {
+    --bg: #eceff4;
+    --fg: #1c2233;
+    --muted: #5b6478;
+    --surface: #ffffff;
+    --board: #2e3a55;
+    --cell: #3b4867;
+    --accent: #c98a22;
+    --veil: rgba(28, 34, 51, .78);
+    --font-display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+    --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --gap: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151d; --fg: #e9ecf2; --muted: #9aa3b5; --surface: #1b2030;
+      --board: #222b40; --cell: #2e3953; --accent: #e8b04e; --veil: rgba(10, 12, 18, .82);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151d; --fg: #e9ecf2; --muted: #9aa3b5; --surface: #1b2030;
+    --board: #222b40; --cell: #2e3953; --accent: #e8b04e; --veil: rgba(10, 12, 18, .82);
+    color-scheme: dark;
+  }
+  @media (max-width: 420px) { :root { --gap: 8px; } }
+
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.5 var(--font-body);
+    padding-block: 28px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  [hidden] { display: none !important; }
+
+  .app { max-width: 460px; margin: 0 auto; display: grid; gap: 18px; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.2rem, 9vw, 3.1rem);
+    line-height: .9;
+    letter-spacing: -.03em;
+  }
+  h1 span { color: var(--accent); }
+  .tagline { margin: 6px 0 0; color: var(--muted); font-size: .92rem; text-wrap: balance; }
+
+  .scores { display: flex; gap: 8px; }
+  .score {
+    min-width: 76px;
+    padding: 6px 12px 8px;
+    border-radius: 8px;
+    background: var(--board);
+    color: #f3f0e8;
+    text-align: center;
+  }
+  .score small {
+    display: block;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: #b9c2d6;
+  }
+  .score b {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .stats { color: var(--muted); font-size: .88rem; font-variant-numeric: tabular-nums; display: flex; gap: 14px; }
+  .stats strong { color: var(--fg); font-weight: 600; }
+  .actions { display: flex; gap: 8px; }
+  button {
+    font: 600 .9rem var(--font-body);
+    border: 0;
+    border-radius: 8px;
+    padding: 9px 14px;
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--fg);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 16%, transparent);
+    transition: transform .08s ease, background .15s ease;
+  }
+  button:hover { background: color-mix(in srgb, var(--surface) 88%, var(--accent)); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); color: #1c1608; box-shadow: none; }
+  button.primary:hover { background: color-mix(in srgb, var(--accent) 88%, #fff); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .board {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 100%;
+    background: var(--board);
+    border-radius: 14px;
+    container-type: inline-size;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 40px -22px rgba(20, 28, 48, .55);
+  }
+  .board:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .grid {
+    position: absolute;
+    inset: 0;
+    padding: var(--gap);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: var(--gap);
+  }
+  .grid div { background: var(--cell); border-radius: 8px; }
+
+  .tile {
+    position: absolute;
+    top: var(--gap);
+    left: var(--gap);
+    width: calc((100% - 5 * var(--gap)) / 4);
+    height: calc((100% - 5 * var(--gap)) / 4);
+    transform: translate(calc(var(--c) * (100% + var(--gap))), calc(var(--r) * (100% + var(--gap))));
+    transition: transform 110ms ease-in-out;
+    z-index: 1;
+  }
+  .tile.merged { z-index: 2; }
+  .tile-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 12cqi;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    background: var(--t-bg);
+    color: var(--t-fg);
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.14), inset 0 2px 0 rgba(255,255,255,.28);
+  }
+  .tile.d3 .tile-inner { font-size: 9.5cqi; }
+  .tile.d4 .tile-inner { font-size: 7.6cqi; }
+  .tile.d5 .tile-inner { font-size: 6cqi; }
+  .tile.new .tile-inner { animation: appear 180ms ease 100ms backwards; }
+  .tile.merged .tile-inner { animation: pop 200ms ease 100ms backwards; }
+  @keyframes appear { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes pop { 0% { transform: scale(0); } 60% { transform: scale(1.14); } 100% { transform: scale(1); } }
+
+  /* Émaux : de la terre crue jusqu'au bleu de four */
+  .v2    { --t-bg: #efe8da; --t-fg: #4a4237; }
+  .v4    { --t-bg: #e6d4b0; --t-fg: #4a4237; }
+  .v8    { --t-bg: #f1a65f; --t-fg: #fffaf2; }
+  .v16   { --t-bg: #e9804b; --t-fg: #fffaf2; }
+  .v32   { --t-bg: #dc5b3e; --t-fg: #fffaf2; }
+  .v64   { --t-bg: #bb3d2f; --t-fg: #fffaf2; }
+  .v128  { --t-bg: #ecc767; --t-fg: #3d2f0a; }
+  .v256  { --t-bg: #e0b23c; --t-fg: #3d2f0a; }
+  .v512  { --t-bg: #7fae68; --t-fg: #fbfff7; }
+  .v1024 { --t-bg: #2b9a8c; --t-fg: #f4fffd; }
+  .v2048 { --t-bg: #1f5f8b; --t-fg: #ffd77a; }
+  .vbig  { --t-bg: #141a2e; --t-fg: #ffd77a; }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    border-radius: 14px;
+    background: var(--veil);
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+    padding: 24px;
+    color: #f3f0e8;
+    animation: fade 300ms ease;
+  }
+  .overlay h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.8rem, 9cqi, 2.6rem);
+    line-height: 1;
+    text-wrap: balance;
+  }
+  .overlay p { margin: 0; color: #c9d0de; max-width: 30ch; }
+  .overlay .actions { flex-wrap: wrap; justify-content: center; }
+  @keyframes fade { from { opacity: 0; } }
+
+  .howto {
+    color: var(--muted);
+    font-size: .9rem;
+    max-width: 62ch;
+    display: grid;
+    gap: 10px;
+  }
+  .howto p { margin: 0; }
+  .howto strong { color: var(--fg); }
+  .ladder { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .ladder span {
+    font: 800 .72rem var(--font-display);
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: var(--t-bg);
+    color: var(--t-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  kbd {
+    font: 600 .78rem var(--font-body);
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--surface);
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--fg) 25%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--fg) 14%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile { transition: none; }
+    .tile .tile-inner, .overlay { animation: none !important; }
+  }
+</style>
+
+<main class="app">
+  <header>
+    <div>
+      <h1>Faïence<br><span>2048</span></h1>
+      <p class="tagline">Fais glisser les carreaux, fusionne les émaux identiques.</p>
+    </div>
+    <div class="scores" aria-live="polite">
+      <div class="score"><small>Score</small><b id="score">0</b></div>
+      <div class="score"><small>Record</small><b id="best">0</b></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="stats">
+      <span>Coups <strong id="moves">0</strong></span>
+      <span>Plus grand carreau <strong id="maxTile">2</strong></span>
+    </div>
+    <div class="actions">
+      <button id="undo" type="button" title="Annuler le dernier coup (U)">Annuler</button>
+      <button id="restart" type="button" class="primary">Nouvelle partie</button>
+    </div>
+  </div>
+
+  <div class="board" id="board" tabindex="0" aria-label="Plateau de jeu. Utilise les flèches pour déplacer les carreaux.">
+    <div class="grid" aria-hidden="true">
+      <div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div>
+    </div>
+    <div id="tiles"></div>
+
+    <div class="overlay" id="winOverlay" hidden>
+      <h2>2048 atteint !</h2>
+      <p>Le carreau bleu de four est sorti. Tu peux viser 4096 ou repartir de zéro.</p>
+      <div class="actions">
+        <button id="keepGoing" type="button" class="primary">Continuer</button>
+        <button id="winRestart" type="button">Nouvelle partie</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="overOverlay" hidden>
+      <h2>Plus aucun coup</h2>
+      <p id="overText">Le plateau est plein.</p>
+      <div class="actions">
+        <button id="overUndo" type="button">Annuler le dernier coup</button>
+        <button id="overRestart" type="button" class="primary">Rejouer</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="howto">
+    <p><strong>Comment jouer.</strong> Flèches du clavier, <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, ou glisse du doigt sur le plateau. Tous les carreaux partent dans la même direction ; deux carreaux de même valeur qui se touchent fusionnent et leur somme s'ajoute au score.</p>
+    <div class="ladder" aria-label="Progression des carreaux">
+      <span class="v2">2</span><span class="v4">4</span><span class="v8">8</span><span class="v16">16</span><span class="v32">32</span><span class="v64">64</span><span class="v128">128</span><span class="v256">256</span><span class="v512">512</span><span class="v1024">1024</span><span class="v2048">2048</span>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const SIZE = 4;
+  const $ = (id) => document.getElementById(id);
+  const tilesEl = $("tiles");
+  const els = new Map(); // id -> element
+
+  let grid, score, best = 0, moves, won, keepPlaying, history, nextId = 1;
+
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  const emptyGrid = () => Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+  const allTiles = () => grid.flat().filter(Boolean);
+
+  function snapshot() {
+    return {
+      cells: grid.map((row) => row.map((t) => (t ? t.value : 0))),
+      score, moves, won, keepPlaying,
+    };
+  }
+
+  function load(s) {
+    clearBoard();
+    grid = emptyGrid();
+    s.cells.forEach((row, r) => row.forEach((v, c) => {
+      if (v) grid[r][c] = { id: nextId++, value: v, r, c, kind: null };
+    }));
+    score = s.score; moves = s.moves || 0; won = !!s.won; keepPlaying = !!s.keepPlaying;
+  }
+
+  function clearBoard() {
+    els.forEach((el) => el.remove());
+    els.clear();
+  }
+
+  function addRandom() {
+    const free = [];
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (!grid[r][c]) free.push([r, c]);
+    if (!free.length) return;
+    const [r, c] = free[Math.floor(Math.random() * free.length)];
+    grid[r][c] = { id: nextId++, value: Math.random() < 0.9 ? 2 : 4, r, c, kind: "new" };
+  }
+
+  function newGame() {
+    clearBoard();
+    grid = emptyGrid();
+    score = 0; moves = 0; won = false; keepPlaying = false; history = null;
+    addRandom(); addRandom();
+    render();
+  }
+
+  function canMove() {
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      const t = grid[r][c];
+      if (!t) return true;
+      if (c < SIZE - 1 && grid[r][c + 1] && grid[r][c + 1].value === t.value) return true;
+      if (r < SIZE - 1 && grid[r + 1][c] && grid[r + 1][c].value === t.value) return true;
+    }
+    return false;
+  }
+
+  // dir : 0 haut, 1 droite, 2 bas, 3 gauche
+  function move(dir) {
+    if (isBlocked()) return;
+    const before = snapshot();
+    const next = emptyGrid();
+    const dying = [];
+    let moved = false, gained = 0;
+
+    for (let i = 0; i < SIZE; i++) {
+      const cells = [];
+      for (let j = 0; j < SIZE; j++) {
+        if (dir === 0) cells.push([j, i]);
+        else if (dir === 2) cells.push([SIZE - 1 - j, i]);
+        else if (dir === 3) cells.push([i, j]);
+        else cells.push([i, SIZE - 1 - j]);
+      }
+      const line = cells.map(([r, c]) => grid[r][c]).filter(Boolean);
+      let k = 0, last = null;
+      for (const t of line) {
+        t.kind = null;
+        if (last && last.value === t.value) {
+          const [r, c] = cells[k - 1];
+          t.r = r; t.c = c;
+          dying.push(last, t);
+          const merged = { id: nextId++, value: t.value * 2, r, c, kind: "merged" };
+          next[r][c] = merged;
+          gained += merged.value;
+          last = null;
+          moved = true;
+        } else {
+          const [r, c] = cells[k];
+          if (t.r !== r || t.c !== c) moved = true;
+          t.r = r; t.c = c;
+          next[r][c] = t;
+          last = t;
+          k++;
+        }
+      }
+    }
+
+    if (!moved) return;
+    history = before;
+    grid = next;
+    score += gained;
+    moves++;
+    addRandom();
+    render(dying);
+  }
+
+  function isBlocked() {
+    return !$("winOverlay").hidden || !$("overOverlay").hidden;
+  }
+
+  function tileEl(t) {
+    let el = els.get(t.id);
+    if (!el) {
+      el = document.createElement("div");
+      el.appendChild(document.createElement("div")).className = "tile-inner";
+      tilesEl.appendChild(el);
+      els.set(t.id, el);
+    }
+    const digits = String(t.value).length;
+    el.className = "tile " + (t.value > 2048 ? "vbig" : "v" + t.value) +
+      (digits >= 3 ? " d" + Math.min(digits, 5) : "") + (t.kind ? " " + t.kind : "");
+    el.style.setProperty("--r", t.r);
+    el.style.setProperty("--c", t.c);
+    el.firstChild.textContent = t.value;
+    return el;
+  }
+
+  function render(dying = []) {
+    const live = allTiles();
+    live.forEach(tileEl);
+    dying.forEach((t) => {
+      const el = tileEl(t);
+      els.delete(t.id);
+      setTimeout(() => el.remove(), 120);
+    });
+
+    const max = Math.max(...live.map((t) => t.value));
+    if (score > best) { best = score; store.set("faience2048.best", best); }
+    $("score").textContent = score;
+    $("best").textContent = best;
+    $("moves").textContent = moves;
+    $("maxTile").textContent = max;
+    $("undo").disabled = !history;
+    $("overUndo").hidden = !history;
+
+    if (!won && max >= 2048) {
+      won = true;
+      if (!keepPlaying) $("winOverlay").hidden = false;
+    } else if (!canMove()) {
+      $("overText").textContent = `Score final : ${score} en ${moves} coups, plus grand carreau ${max}.`;
+      $("overOverlay").hidden = false;
+    }
+    store.set("faience2048.game", snapshot());
+  }
+
+  function undo() {
+    if (!history) return;
+    load(history);
+    history = null;
+    $("overOverlay").hidden = true;
+    $("winOverlay").hidden = true;
+    render();
+  }
+
+  function restart() {
+    $("overOverlay").hidden = true;
+    $("winOverlay").hidden = true;
+    newGame();
+    $("board").focus({ preventScroll: true });
+  }
+
+  // Contrôles
+  const KEYS = {
+    ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3,
+    z: 0, w: 0, d: 1, s: 2, q: 3, a: 3,
+  };
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target.tagName === "BUTTON" && (e.key === "Enter" || e.key === " ")) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (k in KEYS) { e.preventDefault(); move(KEYS[k]); }
+    else if (k === "u") undo();
+  });
+
+  let start = null;
+  const board = $("board");
+  board.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
+    start = { x: e.clientX, y: e.clientY };
+  });
+  board.addEventListener("pointerup", (e) => {
+    if (!start) return;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    start = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 1 : 3);
+    else move(dy > 0 ? 2 : 0);
+  });
+  board.addEventListener("pointercancel", () => { start = null; });
+
+  $("restart").addEventListener("click", restart);
+  $("winRestart").addEventListener("click", restart);
+  $("overRestart").addEventListener("click", restart);
+  $("undo").addEventListener("click", undo);
+  $("overUndo").addEventListener("click", undo);
+  $("keepGoing").addEventListener("click", () => {
+    keepPlaying = true;
+    $("winOverlay").hidden = true;
+    store.set("faience2048.game", snapshot());
+    board.focus({ preventScroll: true });
+  });
+
+  // Démarrage : reprend la partie en cours si elle existe
+  function boot(data) {
+    best = Number(store.get("faience2048.best")) || 0;
+    const saved = (data && data.game) || store.get("faience2048.game");
+    if (saved && Array.isArray(saved.cells) && saved.cells.flat().some(Boolean)) {
+      load(saved);
+      history = (data && data.history) || null;
+      render();
+    } else {
+      newGame();
+    }
+  }
+
+  window.claude?.hot?.snapshot?.(() => ({ game: snapshot(), history }));
+  if (window.claude?.hot?.ready) window.claude.hot.ready(boot);
+  else boot(window.claude?.hot?.data ?? {});
+})();
+</script>
+</html>
