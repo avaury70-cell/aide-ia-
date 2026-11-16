@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   Base
+------------------------------------------------------------------ */
+@layer base {
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-carbon text-bone font-sans antialiased;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4 { @apply font-display tracking-tight text-bone; line-height: 1.08; }
+  ::selection { background: var(--c-signal); color: var(--c-carbon); }
+
+  /* Focus visible, très contrasté (WCAG 2.4.7) */
+  :focus-visible {
+    outline: 2px solid var(--c-signal);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  [id] { scroll-margin-top: 88px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------
+   Composants récurrents
+------------------------------------------------------------------ */
+@layer components {
+  .container-apex { @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8; }
+  .section { padding-block: theme('spacing.section'); }
+
+  /* Surtitre en mono, avec un point Signal */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-signal;
+  }
+  .eyebrow::before {
+    content: ''; width: 6px; height: 6px; border-radius: 2px; background: currentColor;
+    box-shadow: 0 0 12px currentColor;
+  }
+  .title-section { @apply text-3xl font-semibold sm:text-4xl lg:text-5xl; text-wrap: balance; }
+  .lead { @apply text-lg text-mute; max-width: 62ch; }
+
+  /* Carte glassmorphism léger */
+  .glass {
+    @apply rounded-card border border-bone/10 shadow-glass;
+    background: linear-gradient(160deg, rgba(30,37,48,0.72), rgba(21,26,34,0.55));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* Boutons */
+  .btn {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-control px-6 font-display text-base font-semibold
+      transition-[background-color,box-shadow,color,transform] duration-200 ease-apex;
+  }
+  .btn-primary { @apply btn bg-signal text-carbon hover:shadow-signal; }
+  .btn-ghost { @apply btn border border-bone/20 text-bone hover:border-bone/50 hover:bg-bone/5; }
+
+  /* Mention d'hypothèse / sourcing */
+  .tag-hyp {
+    @apply inline-flex items-center gap-1 rounded-pill border border-data/40 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-data;
+  }
+  .tag-source {
+    @apply inline-flex rounded-md border border-alert/50 bg-alert/10 px-1.5 font-mono text-[0.8em] text-alert;
+  }
+
+  /* Champs de formulaire */
+  .field {
+    @apply w-full min-h-[48px] rounded-control border border-steel bg-carbon px-4 py-3 text-bone placeholder:text-faint
+      transition-colors focus:border-signal focus:outline-none focus-visible:outline-none;
+  }
+  .field[aria-invalid='true'] { @apply border-alert; }
+}
+
+/* ------------------------------------------------------------------
+   Fonds graphiques : grille de points et halo
+------------------------------------------------------------------ */
+.bg-dots {
+  background-image: radial-gradient(rgba(244, 246, 248, 0.09) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+.bg-halo {
+  background:
+    radial-gradient(60% 50% at 70% 30%, rgba(60, 224, 255, 0.10), transparent 70%),
+    radial-gradient(40% 40% at 20% 80%, rgba(184, 255, 60, 0.07), transparent 70%);
+}
+
+/* Révélation au scroll (voir components/Reveal.tsx) */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s var(--ease-apex), transform 0.9s var(--ease-apex); }
+.reveal.is-visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+
+/* Ligne lumineuse animée (connexions) */
+@keyframes dash { to { stroke-dashoffset: -40; } }
+.flow-line { stroke-dasharray: 6 14; animation: dash 1.6s linear infinite; }
+
+/* Slider du simulateur */
+input[type='range'].range {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: pointer;
+}
+input[type='range'].range::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 99px;
+  background: linear-gradient(to right, var(--c-signal) var(--fill, 50%), var(--c-steel) var(--fill, 50%));
+}
+input[type='range'].range::-moz-range-track { height: 6px; border-radius: 99px; background: var(--c-steel); }
+input[type='range'].range::-moz-range-progress { height: 6px; border-radius: 99px; background: var(--c-signal); }
+input[type='range'].range::-webkit-slider-thumb {
+  -webkit-appearance: none; margin-top: -9px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--c-bone); border: 4px solid var(--c-signal); box-shadow: 0 0 0 6px rgba(184,255,60,0.15);
+}
+input[type='range'].range::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--c-bone); border: 4px solid var(--c-signal);
+}
