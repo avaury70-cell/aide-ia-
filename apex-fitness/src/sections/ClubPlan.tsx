@@ -6,9 +6,10 @@
  * accessible et lisible sur mobile.
  */
 import { useMemo, useState } from 'react';
-import SectionHeading from '../components/SectionHeading';
+import SectionHeading, { Hl } from '../components/SectionHeading';
 import Reveal from '../components/Reveal';
 import PhotoSlot from '../components/PhotoSlot';
+import Icon from '../components/Icon';
 
 const S = 17; // pixels par mètre
 const COS = Math.cos(Math.PI / 6);
@@ -54,12 +55,13 @@ const ZONES: Zone[] = [
   },
 ];
 
+// couleurs des faces (dessus, gauche, droite) — palette v2
 const FACE = {
-  dark: ['#2a323d', '#161b22', '#0f1318'],
-  signal: ['#B8FF3C', '#7fb320', '#5e8615'],
-  data: ['#3CE0FF', '#1d9db5', '#157a8d'],
-  glass: ['rgba(60,224,255,0.25)', 'rgba(60,224,255,0.12)', 'rgba(60,224,255,0.08)'],
-  mat: ['#232b36', '#1a2029', '#141920'],
+  dark: ['#475569', '#1E293B', '#0F172A'],
+  signal: ['#F97316', '#C2410C', '#9A3412'],
+  data: ['#22C55E', '#15803D', '#166534'],
+  glass: ['rgba(248,250,252,0.22)', 'rgba(248,250,252,0.10)', 'rgba(248,250,252,0.06)'],
+  mat: ['#37414F', '#2B3340', '#222936'],
 } as const;
 
 function IsoBox({ b }: { b: Box }) {
@@ -72,7 +74,7 @@ function IsoBox({ b }: { b: Box }) {
       <polygon points={pts([iso(x, y, z + h), iso(x + w, y, z + h), iso(x + w, y + d, z + h), iso(x, y + d, z + h)])} fill={top} />
       {ring && (
         // anneau lumineux sur le dessus des machines connectées
-        <ellipse cx={iso(x + w / 2, y + d / 2, z + h)[0]} cy={iso(x + w / 2, y + d / 2, z + h)[1]} rx={w * S * 0.42} ry={w * S * 0.22} fill="none" stroke="#B8FF3C" strokeWidth="1.6" />
+        <ellipse cx={iso(x + w / 2, y + d / 2, z + h)[0]} cy={iso(x + w / 2, y + d / 2, z + h)[1]} rx={w * S * 0.42} ry={w * S * 0.22} fill="none" stroke="#F97316" strokeWidth="2" />
       )}
     </g>
   );
@@ -88,22 +90,22 @@ export default function ClubPlan() {
   const vbH = iso(20, 15)[1] - minY + 20;
 
   return (
-    <section aria-labelledby="club-title" className="section relative border-t border-bone/5">
+    <section aria-labelledby="club-title" className="relative bg-bg py-section">
       <div className="container-apex">
         <SectionHeading
           id="club-title"
           eyebrow="Un club APEX"
-          title={<>300 m², cinq zones, <span className="text-signal">zéro temps perdu.</span></>}
+          title={<>300 m², 5 zones, <Hl>zéro temps perdu</Hl></>}
           lead={<>Le format Smart Studio tient sur 250 à 400 m². Survolez ou parcourez au clavier chaque zone de ce plan type. <span className="tag-hyp">Plan illustratif</span></>}
         />
         <div className="grid items-start gap-8 lg:grid-cols-[1.5fr_1fr]">
-          <Reveal className="glass overflow-hidden p-2 sm:p-4">
+          <Reveal className="overflow-hidden rounded-[20px] border-2 border-line bg-ink p-2 shadow-block-primary sm:p-4">
             <svg viewBox={`${minX} ${minY} ${vbW} ${vbH}`} className="h-auto w-full" role="group" aria-label="Plan isométrique d'un club APEX FITNESS">
               {/* murs du fond */}
-              <polygon points={pts([iso(0, 0), iso(20, 0), iso(20, 0, 3), iso(0, 0, 3)])} fill="#151A22" stroke="rgba(244,246,248,0.08)" />
-              <polygon points={pts([iso(0, 0), iso(0, 15), iso(0, 15, 3), iso(0, 0, 3)])} fill="#11151b" stroke="rgba(244,246,248,0.08)" />
+              <polygon points={pts([iso(0, 0), iso(20, 0), iso(20, 0, 3), iso(0, 0, 3)])} fill="#1E293B" stroke="rgba(248,250,252,0.08)" />
+              <polygon points={pts([iso(0, 0), iso(0, 15), iso(0, 15, 3), iso(0, 0, 3)])} fill="#172033" stroke="rgba(248,250,252,0.08)" />
               {/* logo mural */}
-              <path d={(() => { const c = iso(13, 0, 2); return `M${c[0] - 18} ${c[1] + 8} A 22 14 0 1 1 ${c[0] + 18} ${c[1] + 8}`; })()} fill="none" stroke="#B8FF3C" strokeWidth="2.5" opacity=".7" />
+              <path d={(() => { const c = iso(13, 0, 2); return `M${c[0] - 18} ${c[1] + 8} A 22 14 0 1 1 ${c[0] + 18} ${c[1] + 8}`; })()} fill="none" stroke="#F97316" strokeWidth="3" opacity=".8" />
 
               {ordered.map((z) => {
                 const on = z.id === active;
@@ -121,9 +123,9 @@ export default function ClubPlan() {
                   >
                     <polygon
                       points={pts([iso(z.x, z.y), iso(z.x + z.w, z.y), iso(z.x + z.w, z.y + z.d), iso(z.x, z.y + z.d)])}
-                      fill={on ? 'rgba(184,255,60,0.10)' : 'rgba(30,37,48,0.85)'}
-                      stroke={on ? '#B8FF3C' : 'rgba(244,246,248,0.14)'}
-                      strokeWidth={on ? 2 : 1}
+                      fill={on ? 'rgba(249,115,22,0.22)' : 'rgba(49,55,66,0.9)'}
+                      stroke={on ? '#F97316' : 'rgba(248,250,252,0.14)'}
+                      strokeWidth={on ? 3 : 1}
                       className="transition-all duration-300"
                     />
                     {[...z.boxes].sort((a, b) => a.x + a.y - (b.x + b.y)).map((b, i) => <IsoBox key={i} b={b} />)}
@@ -135,9 +137,9 @@ export default function ClubPlan() {
                 const [cx, cy] = iso(zone.x + zone.w / 2, zone.y + zone.d / 2, 2.8);
                 return (
                   <g pointerEvents="none">
-                    <line x1={cx} y1={cy} x2={cx} y2={cy + 34} stroke="#B8FF3C" strokeDasharray="2 3" />
-                    <rect x={cx - 64} y={cy - 26} width="128" height="26" rx="8" fill="#0A0D12" stroke="#B8FF3C" />
-                    <text x={cx} y={cy - 9} textAnchor="middle" fill="#F4F6F8" fontSize="11" fontFamily="JetBrains Mono, monospace">{zone.name.split(' ')[0].toUpperCase()} · {zone.area} m²</text>
+                    <line x1={cx} y1={cy} x2={cx} y2={cy + 34} stroke="#F97316" strokeWidth="2" strokeDasharray="3 3" />
+                    <rect x={cx - 70} y={cy - 28} width="140" height="28" rx="6" fill="#F97316" />
+                    <text x={cx} y={cy - 9} textAnchor="middle" fill="#0F172A" fontSize="14" fontWeight="700" fontFamily="Barlow Condensed, sans-serif">{zone.name.split(' ')[0].toUpperCase()} · {zone.area} m²</text>
                   </g>
                 );
               })()}
@@ -145,19 +147,19 @@ export default function ClubPlan() {
           </Reveal>
 
           <div className="flex flex-col gap-4">
-            <div className="glass p-6" aria-live="polite">
-              <p className="font-mono text-xs uppercase tracking-widest text-data">{zone.area} m² · zone</p>
-              <h3 className="mt-2 text-2xl font-semibold">{zone.name}</h3>
-              <p className="mt-3 text-mute">{zone.desc}</p>
+            <div className="block-card border-2" aria-live="polite">
+              <p className="num text-6xl leading-none text-primary-soft">{zone.area} m²</p>
+              <h3 className="mt-3 text-3xl">{zone.name}</h3>
+              <p className="mt-3 text-fg-muted">{zone.desc}</p>
               <ul className="mt-4 flex flex-wrap gap-2">
                 {zone.items.map((it) => (
-                  <li key={it} className="rounded-pill border border-bone/15 px-3 py-1 text-sm">{it}</li>
+                  <li key={it} className="flex items-center gap-1.5 rounded-[6px] bg-ink px-3 py-1.5 text-sm font-semibold"><Icon name="check" size={14} className="text-accent-soft" />{it}</li>
                 ))}
               </ul>
             </div>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Choisir une zone">
               {ZONES.map((z) => (
-                <button key={z.id} type="button" onClick={() => setActive(z.id)} aria-pressed={z.id === active} className={`rounded-pill border px-3 py-2 text-sm transition-colors ${z.id === active ? 'border-signal bg-signal text-carbon' : 'border-bone/15 text-mute hover:text-bone'}`}>
+                <button key={z.id} type="button" onClick={() => setActive(z.id)} aria-pressed={z.id === active} className={`min-h-[44px] rounded-control border-2 px-4 font-display text-lg font-bold uppercase transition-colors duration-200 ${z.id === active ? 'border-primary bg-primary text-ink' : 'border-line text-fg-muted hover:border-primary hover:text-fg'}`}>
                   {z.name.split(' ')[0]}
                 </button>
               ))}

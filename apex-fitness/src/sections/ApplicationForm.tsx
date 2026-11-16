@@ -69,36 +69,36 @@ export default function ApplicationForm() {
   const errorList = Object.entries(errors) as [keyof Values, string][];
 
   return (
-    <section id="candidature" aria-labelledby="form-title" className="section relative overflow-hidden border-t border-bone/5">
-      <div className="bg-halo pointer-events-none absolute inset-0" />
-      <div aria-hidden="true" className="pointer-events-none absolute -right-40 top-20 h-[520px] w-[520px] rounded-full border-[18px] border-signal/10 [clip-path:polygon(0_0,100%_0,100%_100%,0_100%,0_40%,30%_0)]" />
-      <div className="container-apex relative grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
-        <Reveal className="flex flex-col gap-6">
-          <span className="eyebrow">Candidature</span>
-          <h2 id="form-title" className="title-section">Recevez le dossier de candidature.</h2>
-          <p className="lead">Présentation complète du concept, modèle économique détaillé, étapes et calendrier. Un·e chargé·e de développement vous rappelle sous 72 h ouvrées.</p>
-          <ul className="flex flex-col gap-3 text-bone">
+    <section id="candidature" aria-labelledby="form-title" className="relative overflow-hidden bg-bg py-section">
+      <div className="bg-grid pointer-events-none absolute inset-0" />
+      <div className="container-apex relative grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+        <Reveal className="relative flex flex-col gap-6 self-start overflow-hidden rounded-[20px] bg-primary p-8 text-ink shadow-block sm:p-10 lg:sticky lg:top-28">
+          <div aria-hidden="true" className="absolute -bottom-16 -right-16 h-56 w-56 rounded-full border-[20px] border-ink/10" />
+          <span className="inline-block self-start rounded-[4px] bg-ink px-2.5 py-1 font-display text-sm font-bold uppercase tracking-[0.12em] text-primary-soft">Candidature</span>
+          <h2 id="form-title" className="text-5xl text-ink sm:text-6xl">Recevez le dossier de candidature</h2>
+          <p className="text-lg font-medium">Présentation complète du concept, modèle économique détaillé, étapes et calendrier. Un·e chargé·e de développement vous rappelle sous 72 h ouvrées.</p>
+          <ul className="flex flex-col gap-3 text-lg font-semibold">
             {['Sans engagement', 'Échange confidentiel', 'DIP remis au moins 20 jours avant toute signature'].map((t) => (
-              <li key={t} className="flex gap-3"><Icon name="check" className="text-signal" /> {t}</li>
+              <li key={t} className="flex gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-ink text-primary"><Icon name="check" size={16} /></span> {t}</li>
             ))}
           </ul>
         </Reveal>
 
-        <Reveal delay={100} className="glass p-6 sm:p-8">
+        <Reveal delay={100} className="rounded-[20px] border-2 border-line bg-card p-6 shadow-xl sm:p-8">
           {status === 'success' ? (
             <div ref={successRef} tabIndex={-1} role="status" className="flex flex-col items-start gap-4 py-10 outline-none">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-signal text-carbon"><Icon name="check" size={28} /></span>
-              <h3 className="text-3xl font-semibold">Merci {values.firstName}, c'est bien reçu.</h3>
-              <p className="text-mute">Votre demande pour la zone <strong className="text-bone">{values.zone}</strong> est enregistrée. Vous recevrez le dossier à l'adresse {values.email}.</p>
-              <p className="rounded-control border border-data/30 bg-data/5 p-3 text-sm text-data">Projet pédagogique fictif : aucune donnée n'a été transmise ni conservée.</p>
-              <button type="button" className="btn-ghost" onClick={() => { setValues(INITIAL); setTouched({}); setSubmitted(false); setStatus('idle'); }}>Nouvelle demande</button>
+              <span className="flex h-16 w-16 items-center justify-center rounded-control bg-accent text-ink shadow-block"><Icon name="trophy" size={32} /></span>
+              <h3 className="text-5xl">Merci {values.firstName}, c'est bien reçu.</h3>
+              <p className="text-lg text-fg-muted">Votre demande pour la zone <strong className="text-fg">{values.zone}</strong> est enregistrée. Vous recevrez le dossier à l'adresse {values.email}.</p>
+              <p className="rounded-control border-2 border-accent/50 p-3 text-accent-soft">Projet pédagogique fictif : aucune donnée n'a été transmise ni conservée.</p>
+              <button type="button" className="btn-secondary" onClick={() => { setValues(INITIAL); setTouched({}); setSubmitted(false); setStatus('idle'); }}>Nouvelle demande</button>
             </div>
           ) : (
             <form noValidate onSubmit={onSubmit} aria-describedby="form-note">
               {submitted && errorList.length > 0 && (
-                <div ref={summaryRef} tabIndex={-1} role="alert" className="mb-6 rounded-control border border-alert/50 bg-alert/10 p-4 outline-none">
-                  <p className="flex items-center gap-2 font-semibold text-alert"><Icon name="alert" size={18} /> {errorList.length} champ{errorList.length > 1 ? 's' : ''} à corriger</p>
-                  <ul className="mt-2 list-inside list-disc text-sm text-bone">
+                <div ref={summaryRef} tabIndex={-1} role="alert" className="mb-6 rounded-control border-2 border-danger-soft bg-ink p-4 outline-none">
+                  <p className="flex items-center gap-2 font-display text-xl font-bold uppercase text-danger-soft"><Icon name="alert" size={18} /> {errorList.length} champ{errorList.length > 1 ? 's' : ''} à corriger</p>
+                  <ul className="mt-2 list-inside list-disc text-fg">
                     {errorList.map(([k]) => (
                       <li key={k}><a href={`#f-${k}`} className="underline underline-offset-2">{LABELS[k]}</a></li>
                     ))}
@@ -167,18 +167,18 @@ export default function ApplicationForm() {
               </div>
 
               <div className="mt-5">
-                <label className="flex cursor-pointer gap-3 text-sm text-mute">
-                  <input id="f-consent" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#B8FF3C]" checked={values.consent} onChange={(e) => set('consent', e.target.checked)} onBlur={() => blur('consent')} aria-invalid={!!show('consent')} aria-describedby={show('consent') ? 'e-consent' : undefined} required />
-                  <span>J'accepte qu'APEX FITNESS utilise ces informations pour me recontacter au sujet de mon projet de franchise. <a href="/mentions-legales#rgpd" className="text-bone underline underline-offset-2">En savoir plus sur mes données</a>.</span>
+                <label className="flex cursor-pointer gap-3 text-fg-muted">
+                  <input id="f-consent" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#22C55E]" checked={values.consent} onChange={(e) => set('consent', e.target.checked)} onBlur={() => blur('consent')} aria-invalid={!!show('consent')} aria-describedby={show('consent') ? 'e-consent' : undefined} required />
+                  <span>J'accepte qu'APEX FITNESS utilise ces informations pour me recontacter au sujet de mon projet de franchise. <a href="/mentions-legales#rgpd" className="text-fg underline decoration-primary decoration-2 underline-offset-2">En savoir plus sur mes données</a>.</span>
                 </label>
-                {show('consent') && <p id="e-consent" className="mt-2 flex items-center gap-1.5 text-sm text-alert"><Icon name="alert" size={16} /> {errors.consent}</p>}
+                {show('consent') && <p id="e-consent" className="mt-2 flex items-center gap-1.5 text-danger-soft"><Icon name="alert" size={16} /> {errors.consent}</p>}
               </div>
 
               <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
                 <MagneticButton type="submit" disabled={status === 'sending'}>
                   {status === 'sending' ? 'Envoi en cours…' : <>Recevoir le dossier <Icon name="arrow" size={18} /></>}
                 </MagneticButton>
-                <p id="form-note" className="text-xs text-faint">Champs marqués * obligatoires. Projet pédagogique : aucune donnée n'est envoyée.</p>
+                <p id="form-note" className="text-sm text-fg-muted">Champs marqués * obligatoires. Projet pédagogique : aucune donnée n'est envoyée.</p>
               </div>
             </form>
           )}
@@ -198,13 +198,13 @@ function Field({ name, label, error, required, hint, children }: { name: string;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between">
-        <label htmlFor={id} className="text-sm font-medium text-bone">
-          {label} {required && <span className="text-signal" aria-hidden="true">*</span>}
+        <label htmlFor={id} className="font-display text-lg font-semibold uppercase tracking-wide text-fg">
+          {label} {required && <span className="text-primary-soft" aria-hidden="true">*</span>}
         </label>
-        {hint && <span id={hintId} className="font-mono text-xs text-faint">{hint}</span>}
+        {hint && <span id={hintId} className="text-sm tabular-nums text-fg-muted">{hint}</span>}
       </div>
       {children({ id, name, 'aria-invalid': !!error, 'aria-describedby': describedby, 'aria-required': required })}
-      {error && <p id={errId} className="flex items-start gap-1.5 text-sm text-alert"><Icon name="alert" size={16} className="mt-0.5 shrink-0" /> {error}</p>}
+      {error && <p id={errId} role="alert" className="flex items-start gap-1.5 text-danger-soft"><Icon name="alert" size={16} className="mt-0.5 shrink-0" /> {error}</p>}
     </div>
   );
 }

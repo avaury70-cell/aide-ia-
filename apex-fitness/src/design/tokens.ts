@@ -1,50 +1,52 @@
 /**
- * APEX FITNESS — DESIGN TOKENS
+ * APEX FITNESS — DESIGN TOKENS (v2, refonte « Vibrant & Block-based »)
  * ---------------------------------------------------------------
- * Fichier unique de référence : couleurs, typographies, rayons,
- * espacements, ombres, mouvement. Consommé par :
- *  - tailwind.config.ts (classes utilitaires)
- *  - les scènes 3D (matériaux three.js)
- *  - la page /charte (brand book interactif)
- * Toute modification de la marque se fait ICI.
+ * Source : skill UI/UX Pro Max (design-system/apex-fitness/MASTER.md),
+ * corrigée pour l'accessibilité (contrastes WCAG AA vérifiés, voir /charte).
+ * Fichier unique consommé par Tailwind, les scènes 3D et la page /charte.
  */
 
+/** Couleurs de marque, avec nom et rôle (affichées dans le brand book). */
 export const palette = {
-  carbon: { hex: '#0A0D12', name: 'Noir carbone', role: 'Fond principal' },
-  graphite: { hex: '#151A22', name: 'Graphite', role: 'Surfaces, cartes' },
-  bone: { hex: '#F4F6F8', name: 'Blanc os', role: 'Texte principal, fond clair' },
-  signal: { hex: '#B8FF3C', name: 'Signal', role: 'CTA, éléments actifs' },
-  data: { hex: '#3CE0FF', name: 'Data', role: 'Graphiques, connexions' },
+  primary: { hex: '#F97316', name: 'Orange Énergie', role: 'Couleur de marque, blocs, grands titres' },
+  accent: { hex: '#22C55E', name: 'Vert Go', role: 'Boutons d\'action (CTA), réussite' },
+  bg: { hex: '#1F2937', name: 'Ardoise', role: 'Fond principal' },
+  ink: { hex: '#0F172A', name: 'Encre', role: 'Fond profond, texte sur couleur' },
+  fg: { hex: '#F8FAFC', name: 'Craie', role: 'Texte principal' },
 } as const;
 
 export const tokens = {
   color: {
-    carbon: palette.carbon.hex,
-    graphite: palette.graphite.hex,
-    'graphite-2': '#1E2530', // surface surélevée
-    steel: '#2A3340', // bordures pleines, pistes de sliders
-    bone: palette.bone.hex,
-    mute: '#A3ADBB', // texte secondaire (≥ 7:1 sur carbone)
-    faint: '#8590A0', // texte tertiaire (≥ 5:1 sur carbone et graphite)
-    signal: palette.signal.hex,
-    'signal-deep': '#3F6600', // Signal pour fonds clairs (≥ 6:1 sur Blanc os)
-    data: palette.data.hex,
-    'data-deep': '#006478', // Data pour fonds clairs
-    alert: '#FF7A6B', // erreurs, résultat négatif (toujours avec icône + texte)
+    primary: palette.primary.hex,
+    'primary-soft': '#FB923C', // orange pour petits textes sur cartes (≥ 5:1)
+    accent: palette.accent.hex,
+    'accent-soft': '#4ADE80', // vert pour petits textes (≥ 5,9:1)
+    bg: palette.bg.hex,
+    ink: palette.ink.hex,
+    card: '#313742',
+    muted: '#37414F',
+    line: '#374151', // bordures
+    fg: palette.fg.hex,
+    'fg-muted': '#CBD5E1', // texte secondaire (≥ 6,9:1)
+    faint: '#94A3B8', // texte tertiaire, seulement sur bg/ink (≥ 5,7:1)
+    danger: '#EF4444', // aplats d'erreur (texte noir dessus)
+    'danger-soft': '#FCA5A5', // texte d'erreur sur fonds sombres
   },
   font: {
-    display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
-    sans: ['Inter', 'system-ui', 'sans-serif'],
-    mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+    display: ['"Barlow Condensed"', 'Impact', 'sans-serif'],
+    sans: ['Barlow', 'system-ui', 'sans-serif'],
   },
-  radius: { card: '16px', control: '12px', pill: '999px' },
-  space: { section: 'clamp(5rem, 10vw, 9rem)', gutter: '1rem' },
+  radius: { card: '16px', control: '8px', pill: '999px' },
+  space: { section: 'clamp(4.5rem, 9vw, 8rem)' },
   shadow: {
-    glass: '0 1px 0 0 rgba(244,246,248,0.06) inset, 0 24px 48px -24px rgba(0,0,0,0.6)',
-    signal: '0 0 0 1px rgba(184,255,60,0.35), 0 12px 40px -12px rgba(184,255,60,0.45)',
+    md: '0 4px 6px rgba(0,0,0,0.1)',
+    lg: '0 10px 15px rgba(0,0,0,0.15)',
+    xl: '0 20px 25px rgba(0,0,0,0.25)',
+    block: '6px 6px 0 0 #0F172A', // ombre « bloc » décalée, signature du style
+    'block-primary': '6px 6px 0 0 #F97316',
   },
-  layout: { contentMax: '1200px' },
-  motion: { ease: 'cubic-bezier(0.22, 1, 0.36, 1)', fast: '180ms', base: '420ms', slow: '900ms' },
+  layout: { contentMax: '1240px' },
+  motion: { ease: 'cubic-bezier(0.34, 1.56, 0.64, 1)', fast: '200ms', base: '350ms' },
 } as const;
 
 /** Variables CSS dérivées des tokens (injectées dans :root par Tailwind). */
@@ -52,7 +54,6 @@ export function cssVariables(): Record<string, string> {
   const vars: Record<string, string> = {};
   for (const [k, v] of Object.entries(tokens.color)) vars[`--c-${k}`] = v;
   vars['--ease-apex'] = tokens.motion.ease;
-  vars['--radius-card'] = tokens.radius.card;
   return vars;
 }
 

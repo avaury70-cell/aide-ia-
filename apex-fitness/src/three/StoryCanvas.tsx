@@ -14,7 +14,7 @@ import Stage from './Stage';
 
 const KEYS = [
   { pos: new THREE.Vector3(2.3, 1.55, 1.9), look: new THREE.Vector3(0.9, 1.35, 0.25) },
-  { pos: new THREE.Vector3(-2.6, 1.6, 1.6), look: new THREE.Vector3(0, 1.05, -0.3) },
+  { pos: new THREE.Vector3(-3.3, 1.9, 2.5), look: new THREE.Vector3(0.1, 1.1, -0.2) },
   { pos: new THREE.Vector3(0.6, 2.6, 4.1), look: new THREE.Vector3(0.1, 0.95, 0) },
 ];
 const ss = THREE.MathUtils.smoothstep;
@@ -39,10 +39,10 @@ function Director({ progress, ctrl, bindInvalidate, instant }: { progress: Mutab
     camera.lookAt(look.current);
 
     // état de la machine selon l'étape
-    ctrl.current.scan = ss(v, 0.04, 0.26);
-    ctrl.current.ring = ss(v, 0.36, 0.6);
-    ctrl.current.load = ss(v, 0.44, 0.64) * 0.64;
-    ctrl.current.seat = ss(v, 0.5, 0.66);
+    ctrl.current.scan = ss(v, 0.03, 0.2);
+    ctrl.current.ring = ss(v, 0.22, 0.42);
+    ctrl.current.load = ss(v, 0.3, 0.48) * 0.64;
+    ctrl.current.seat = ss(v, 0.34, 0.5);
 
     if (Math.abs(p.current - progress.current) > 0.0005) invalidate();
   });

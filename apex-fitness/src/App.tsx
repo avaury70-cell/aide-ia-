@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import StickyCta from './components/StickyCta';
 import Home from './pages/Home';
 
 // Pages secondaires chargées à la demande (code splitting)
@@ -29,7 +30,7 @@ function ScrollManager() {
 export default function App() {
   return (
     <>
-      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-control focus:bg-signal focus:px-4 focus:py-3 focus:font-semibold focus:text-carbon">
+      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-control focus:bg-accent focus:px-4 focus:py-3 focus:font-semibold focus:text-ink">
         Aller au contenu
       </a>
       <ScrollManager />
@@ -47,6 +48,7 @@ export default function App() {
         </Suspense>
       </main>
       <Footer />
+      <StickyCta />
     </>
   );
 }

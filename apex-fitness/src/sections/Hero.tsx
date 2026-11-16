@@ -1,18 +1,25 @@
+/**
+ * HERO — bloc d'accroche : titre condensé XXL, mot surligné par un bloc orange,
+ * machine 3D dans un « bloc » à ombre décalée, HUD gamifié de l'appli,
+ * puis rangée de chiffres-blocs et bandeau défilant.
+ */
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import MagneticButton from '../components/MagneticButton';
 import Counter from '../components/Counter';
 import MachineIllustration from '../components/MachineIllustration';
+import Marquee from '../components/Marquee';
 import Icon from '../components/Icon';
+import Stagger from '../components/Stagger';
 import { canRender3D, useReducedMotion } from '../hooks/useMedia';
 import type { HeroPhase } from '../three/HeroCanvas';
 
 const HeroCanvas = lazy(() => import('../three/HeroCanvas'));
 
-const PHASE_TEXT: Record<HeroPhase, { label: string; detail: string }> = {
-  idle: { label: 'En attente', detail: 'Scanne le QR code de la machine' },
-  scan: { label: 'Lecture du QR…', detail: 'Programme « Remise en forme » · séance 12' },
-  adjust: { label: 'Réglage automatique', detail: 'Résistance, charge et siège en cours' },
-  ready: { label: 'Prêt', detail: 'Charge 45 kg · siège position 4 · 3 × 12' },
+const PHASES: Record<HeroPhase, { label: string; detail: string; pct: number }> = {
+  idle: { label: 'En attente du scan', detail: 'Approche ton téléphone du QR code', pct: 0 },
+  scan: { label: 'Lecture du QR…', detail: 'Programme « Remise en forme » · séance 12', pct: 35 },
+  adjust: { label: 'Réglage automatique', detail: 'Résistance, charge et siège', pct: 75 },
+  ready: { label: 'Prêt, à toi de pousser', detail: '45 kg · siège 4 · 3 × 12', pct: 100 },
 };
 
 export default function Hero() {
@@ -21,7 +28,7 @@ export default function Hero() {
   const [play, setPlay] = useState(0);
   const [phase, setPhase] = useState<HeroPhase>('idle');
 
-  // La 3D est chargée après le premier affichage (le texte reste prioritaire).
+  // 3D chargée après le premier affichage : le texte (LCP) reste prioritaire.
   useEffect(() => {
     if (!canRender3D()) return;
     const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
@@ -29,7 +36,6 @@ export default function Hero() {
     if (w.requestIdleCallback) w.requestIdleCallback(start, { timeout: 1500 });
     else window.setTimeout(start, 400);
   }, []);
-  // lancement automatique de la séquence une fois la scène prête
   useEffect(() => {
     if (!use3D) return;
     const t = window.setTimeout(() => setPlay(1), 700);
@@ -38,52 +44,33 @@ export default function Hero() {
 
   const replay = useCallback(() => setPlay((p) => p + 1), []);
   const onPhase = useCallback((p: HeroPhase) => setPhase(p), []);
-  const status = PHASE_TEXT[use3D ? phase : 'ready'];
+  const st = PHASES[use3D ? phase : 'ready'];
 
   return (
     <section aria-labelledby="hero-title" className="relative overflow-hidden">
-      <div className="bg-dots pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(70%_60%_at_50%_40%,black,transparent)]" />
-      <div className="bg-halo pointer-events-none absolute inset-0" />
+      <div className="bg-grid pointer-events-none absolute inset-0" />
+      {/* formes géométriques de fond */}
 
-      <div className="container-apex relative grid items-center gap-10 pb-16 pt-10 lg:min-h-[calc(100vh-72px)] lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-6">
-        {/* Texte */}
+      <div className="container-apex relative grid items-center gap-12 pb-20 pt-10 lg:grid-cols-[1.08fr_1fr] lg:pb-24 lg:pt-14">
         <div className="flex flex-col gap-7">
           <span className="eyebrow">Réseau de franchise · Smart Studio</span>
-          <h1 id="hero-title" className="text-[2.6rem] font-bold leading-[1.02] sm:text-6xl lg:text-[4.4rem]">
-            Le sport qui <span className="text-signal">s'adapte</span> à toi.
+          <h1 id="hero-title" className="text-[3.6rem] font-extrabold leading-[0.92] sm:text-[5.5rem] lg:text-[7rem]">
+            <span className="block">Le sport qui</span>
+            <span className="relative z-0 my-1 inline-block -rotate-2 rounded-[10px] bg-primary px-3 pb-1 text-ink shadow-block">s'adapte</span>
+            <span className="relative z-10 mt-3 block">à toi.</span>
           </h1>
-          <p className="max-w-[46ch] text-lg text-mute sm:text-xl">
-            <span className="font-mono text-bone">Scanne. Pousse.</span> La machine s'occupe du reste. Ouvrez un club APEX FITNESS : des machines qui se règlent seules, une équipe réduite, une plateforme clé en main.
+          <p className="max-w-[44ch] text-xl text-fg-muted">
+            <strong className="font-semibold text-fg">Scanne. Pousse. La machine s'occupe du reste.</strong> Ouvrez un club APEX FITNESS : des machines qui se règlent seules, une petite équipe, une plateforme clé en main.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <MagneticButton to="/#candidature">
-              Recevoir le dossier <Icon name="arrow" size={18} />
-            </MagneticButton>
-            <MagneticButton to="/#concept" variant="ghost">
-              Voir le concept
-            </MagneticButton>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <MagneticButton to="/#candidature">Recevoir le dossier <Icon name="arrow" size={20} /></MagneticButton>
+            <MagneticButton to="/#concept" variant="secondary"><Icon name="play" size={18} /> Voir le concept</MagneticButton>
           </div>
-
-          <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-bone/10 pt-6 sm:gap-6">
-            <KeyFigure label="m² de Smart Studio">
-              <Counter value={250} />–<Counter value={400} />
-            </KeyFigure>
-            <KeyFigure label="réglage pour l'adhérent">
-              <Counter value={0} />
-            </KeyFigure>
-            <KeyFigure label="salariés par club">
-              <Counter value={2} />–<Counter value={3} />
-            </KeyFigure>
-          </dl>
-          <p className="-mt-3 text-xs text-faint"><span className="tag-hyp">Hypothèses pédagogiques</span> — format et effectif cibles du concept.</p>
         </div>
 
-        {/* Visuel 3D */}
-        <div className="relative">
-          <div
-            className="relative aspect-square w-full overflow-hidden rounded-[28px] border border-bone/10 bg-carbon sm:aspect-[4/3] lg:aspect-[4/4.3]"
-            onClick={use3D ? replay : undefined}
-          >
+        {/* Bloc visuel 3D */}
+        <div className="relative pb-10 sm:pb-6">
+          <div className="relative aspect-square overflow-hidden rounded-[20px] border-2 border-primary bg-ink shadow-block-primary sm:aspect-[4/3.6]" onClick={use3D ? replay : undefined}>
             {use3D ? (
               <Suspense fallback={<MachineIllustration className="h-full w-full p-8 opacity-60" />}>
                 <HeroCanvas play={play} reduced={reduced} onPhase={onPhase} />
@@ -91,35 +78,55 @@ export default function Hero() {
             ) : (
               <MachineIllustration className="h-full w-full p-8" />
             )}
-            <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-inset ring-bone/5" />
+            <span className="absolute left-4 top-4 rounded-[4px] bg-fg px-2 py-0.5 font-display text-sm font-bold uppercase tracking-wider text-ink">Machine n° 04 · Poussée</span>
           </div>
 
-          {/* HUD de l'appli (DOM, lisible par les lecteurs d'écran) */}
-          <div className="glass absolute -bottom-6 left-4 right-4 flex items-center justify-between gap-4 p-4 sm:left-auto sm:right-6 sm:w-[380px]">
-            <div aria-live="polite" className="min-w-0">
-              <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-signal">
-                <span className={`h-2 w-2 rounded-full ${phase === 'ready' || !use3D ? 'bg-signal' : 'animate-pulse bg-data'}`} />
-                {status.label}
-              </p>
-              <p className="mt-1 text-sm text-bone">{status.detail}</p>
+          {/* HUD de l'appli, gamifié (DOM lisible par les lecteurs d'écran) */}
+          <div className="absolute -bottom-2 left-3 right-3 rounded-card border-2 border-line bg-card p-4 shadow-xl sm:left-auto sm:right-[-12px] sm:w-[360px]">
+            <div className="flex items-start justify-between gap-3">
+              <div aria-live="polite" className="min-w-0">
+                <p className="flex items-center gap-2 font-display text-base font-bold uppercase tracking-wide text-accent-soft">
+                  <span className={`h-2.5 w-2.5 rounded-[3px] ${st.pct === 100 ? 'bg-accent' : 'animate-pulse bg-primary'}`} /> {st.label}
+                </p>
+                <p className="mt-0.5 text-fg">{st.detail}</p>
+              </div>
+              {use3D && (
+                <button type="button" onClick={replay} aria-label="Rejouer l'animation du scan" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-muted text-fg transition-colors duration-200 hover:bg-primary hover:text-ink">
+                  <Icon name="replay" size={18} />
+                </button>
+              )}
             </div>
-            {use3D && (
-              <button type="button" onClick={replay} className="shrink-0 rounded-lg border border-bone/15 px-3 py-2 text-xs font-medium text-bone hover:border-signal hover:text-signal">
-                <Icon name="scan" size={16} className="mr-1 inline" /> Rejouer
-              </button>
-            )}
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink" role="progressbar" aria-label="Préparation de la machine" aria-valuenow={st.pct} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out" style={{ width: `${st.pct}%` }} />
+            </div>
+            <p className="mt-3 flex items-center gap-4 text-sm text-fg-muted">
+              <span className="flex items-center gap-1"><Icon name="flame" size={16} className="text-primary-soft" /> Série de 12 jours</span>
+              <span className="flex items-center gap-1"><Icon name="trophy" size={16} className="text-accent-soft" /> Niveau 4</span>
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Chiffres-blocs */}
+      <div className="container-apex relative pb-16">
+        <Stagger as="dl" className="grid gap-4 sm:grid-cols-3">
+          <StatBlock tone="primary" label="m² de Smart Studio"><Counter value={250} />–<Counter value={400} /></StatBlock>
+          <StatBlock tone="card" label="réglage pour l'adhérent"><Counter value={0} /></StatBlock>
+          <StatBlock tone="accent" label="salariés par club"><Counter value={2} />–<Counter value={3} /></StatBlock>
+        </Stagger>
+        <p className="mt-4 text-sm text-faint"><span className="tag-hyp">Hypothèses pédagogiques</span> Format et effectif cibles du concept.</p>
+      </div>
+      <Marquee tone="ink" items={['Scanne', 'Pousse', 'Progresse', 'Zéro réglage', 'Programme sur mesure', 'Progression visible']} />
     </section>
   );
 }
 
-function KeyFigure({ label, children }: { label: string; children: React.ReactNode }) {
+function StatBlock({ tone, label, children }: { tone: 'primary' | 'accent' | 'card'; label: string; children: React.ReactNode }) {
+  const cls = tone === 'primary' ? 'bg-primary text-ink' : tone === 'accent' ? 'bg-accent text-ink' : 'bg-card text-fg border-2 border-line';
   return (
-    <div className="flex flex-col gap-1">
-      <dt className="order-2 text-xs leading-snug text-mute sm:text-sm">{label}</dt>
-      <dd className="order-1 font-mono text-xl font-semibold text-bone sm:text-3xl">{children}</dd>
+    <div className={`flex flex-col rounded-card p-6 shadow-block ${cls}`}>
+      <dt className={`order-2 font-display text-lg font-semibold uppercase tracking-wide ${tone === 'card' ? 'text-fg-muted' : ''}`}>{label}</dt>
+      <dd className="num order-1 text-6xl leading-none sm:text-7xl">{children}</dd>
     </div>
   );
 }

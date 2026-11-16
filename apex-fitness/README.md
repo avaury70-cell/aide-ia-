@@ -5,6 +5,8 @@
 
 **Promesse :** Le sport qui s'adapte à toi. · **Baseline :** Scanne. Pousse. La machine s'occupe du reste.
 
+**Design v2** : identité refaite avec le skill **UI/UX Pro Max** (installé dans `.claude/skills/`). Design system généré : `design-system/apex-fitness/MASTER.md`. Style « Vibrant & Block-based », Orange Énergie `#F97316` + Vert Go `#22C55E`, Barlow Condensed + Barlow, icônes Lucide, animations GSAP en cascade.
+
 ## Lancer le projet
 
 Prérequis : Node.js 18 ou plus récent.
@@ -21,7 +23,7 @@ Déploiement statique (Netlify, Vercel, GitHub Pages…) : publier `dist/`. Les 
 
 ## Stack
 
-React 18 + Vite 5 + TypeScript + Tailwind 3 · @react-three/fiber + drei (3D) · GSAP ScrollTrigger (scrollytelling) · react-router (pages).
+React 18 + Vite 5 + TypeScript + Tailwind 3 · @react-three/fiber + drei (3D) · GSAP + ScrollTrigger (scrollytelling, cascades) · lucide-react (icônes) · react-router (pages).
 Aucun modèle 3D, aucune photo, aucun HDR téléchargé : tout est généré par le code.
 
 ## Arborescence
@@ -48,7 +50,7 @@ apex-fitness/
 
 | Route | Contenu |
 |---|---|
-| `/` | One-page franchise : hero 3D, problème/solution, 3 étapes en scrollytelling 3D, plan isométrique du club, modèle, simulateur, profil + 5 étapes, accompagnement, carte, FAQ (DIP), formulaire |
+| `/` | One-page franchise : hero 3D, problème/solution, 3 étapes en scrollytelling 3D, appli gamifiée, plan isométrique du club, modèle (bento), bloc CTA, simulateur, profils + 5 étapes, accompagnement, carte, FAQ (DIP), formulaire, CTA mobile collant |
 | `/concept` | Version grand public du concept |
 | `/presse` | Communiqué (exemple fictif), fiche d'identité, kit média téléchargeable |
 | `/charte` | Brand book interactif (pistes de logo, versions, palette avec ratios de contraste calculés en direct, typographies, formes, règles, ton) |

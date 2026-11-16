@@ -1,63 +1,64 @@
-import SectionHeading from '../components/SectionHeading';
+/** Profils (cas d'usage), profil idéal et les 5 étapes pour rejoindre le réseau. */
+import SectionHeading, { Hl } from '../components/SectionHeading';
+import Stagger from '../components/Stagger';
 import Reveal from '../components/Reveal';
 import Icon from '../components/Icon';
 
 const PROFILES = [
-  { t: 'Entrepreneur·e', d: 'Vous voulez créer votre entreprise avec un concept éprouvé et une marque forte.' },
-  { t: 'En reconversion', d: 'Cadre ou ex-salarié·e, vous disposez d\'un apport et voulez un métier de terrain qui a du sens.' },
-  { t: 'Coach sportif', d: 'Vous connaissez le métier et voulez monter votre salle sans vous noyer dans la technique.' },
-  { t: 'Investisseur·se', d: 'Vous envisagez plusieurs clubs avec un·e gérant·e opérationnel·le.' },
+  { icon: 'zap', t: 'Entrepreneur·e', d: 'Vous voulez créer votre entreprise avec un concept éprouvé et une marque forte.' },
+  { icon: 'target', t: 'En reconversion', d: "Cadre ou ex-salarié·e avec un apport, vous voulez un métier de terrain qui a du sens." },
+  { icon: 'dumbbell', t: 'Coach sportif', d: 'Vous connaissez le métier et voulez votre salle, sans vous noyer dans la technique.' },
+  { icon: 'chart', t: 'Investisseur·se', d: 'Vous envisagez plusieurs clubs avec un·e gérant·e opérationnel·le.' },
 ];
-const CRITERIA = ['Apport personnel de 50 000 à 150 000 €', 'Goût du management et du service', 'Ancrage local, envie de fédérer une communauté', 'Sensibilité santé et bien-être, pas besoin d\'être un athlète'];
-
+const CRITERIA = ['Apport personnel de 50 000 à 150 000 €', 'Goût du management et du service', 'Ancrage local, envie de fédérer une communauté', 'Sensibilité santé et bien-être (pas besoin d\'être un athlète)'];
 const STEPS = [
-  { t: 'Candidature', when: 'J0', d: 'Vous remplissez le formulaire. Nous vous rappelons sous 72 h ouvrées et vous envoyons le dossier de présentation.' },
-  { t: 'Rencontre', when: 'Semaines 2–4', d: 'Entretien découverte, visite d\'un club pilote, étude de votre zone et de votre plan de financement.' },
-  { t: 'DIP', when: '≥ 20 jours avant signature', d: 'Remise du Document d\'Information Précontractuelle. Vous disposez d\'au moins 20 jours pour l\'étudier, avec votre avocat ou expert-comptable.' },
-  { t: 'Signature', when: 'Mois 2–3', d: 'Signature du contrat de franchise, validation du local, lancement des travaux et de la formation.' },
-  { t: 'Ouverture', when: 'Mois 6–9', d: 'Pré-ventes, campagne d\'ouverture locale, installation des machines connectées. Votre club accueille ses premiers adhérents.' },
+  { t: 'Candidature', when: 'J0', d: 'Vous remplissez le formulaire. Rappel sous 72 h ouvrées et envoi du dossier de présentation.' },
+  { t: 'Rencontre', when: 'Sem. 2–4', d: "Entretien, visite d'un club pilote, étude de votre zone et de votre plan de financement." },
+  { t: 'DIP', when: '≥ 20 jours', d: "Remise du Document d'Information Précontractuelle au moins 20 jours avant toute signature." },
+  { t: 'Signature', when: 'Mois 2–3', d: 'Contrat de franchise, validation du local, lancement des travaux et de la formation.' },
+  { t: 'Ouverture', when: 'Mois 6–9', d: "Pré-ventes, campagne d'ouverture locale, installation des machines. Premiers adhérents !" },
 ];
 
 export default function Join() {
   return (
-    <section id="rejoindre" aria-labelledby="join-title" className="section relative border-t border-bone/5">
+    <section id="rejoindre" aria-labelledby="join-title" className="relative bg-bg py-section">
       <div className="container-apex">
-        <SectionHeading id="join-title" eyebrow="Rejoindre le réseau" title={<>Pas besoin d'être un athlète. <span className="text-signal">Il faut être un bâtisseur.</span></>} lead="Nous cherchons des femmes et des hommes qui aiment les gens, savent animer une équipe et veulent s'ancrer dans leur ville." />
+        <SectionHeading id="join-title" eyebrow="Rejoindre le réseau" title={<>Pas besoin d'être un athlète. <Hl tone="accent">Il faut être un bâtisseur.</Hl></>} lead="Nous cherchons des femmes et des hommes qui aiment les gens, savent animer une équipe et veulent s'ancrer dans leur ville." />
 
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {PROFILES.map((p, i) => (
-              <Reveal key={p.t} delay={i * 70} className="rounded-card border border-bone/10 bg-graphite/60 p-6">
-                <h3 className="text-xl font-semibold">{p.t}</h3>
-                <p className="mt-2 text-mute">{p.d}</p>
-              </Reveal>
+        <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+          <Stagger className="grid gap-4 sm:grid-cols-2">
+            {PROFILES.map((p) => (
+              <div key={p.t} className="block-card-hover border-2">
+                <span className="flex h-12 w-12 items-center justify-center rounded-control bg-primary text-ink"><Icon name={p.icon} size={24} /></span>
+                <h3 className="mt-4 text-3xl">{p.t}</h3>
+                <p className="mt-1 text-fg-muted">{p.d}</p>
+              </div>
             ))}
-          </div>
-          <Reveal delay={150} className="glass p-6 sm:p-8">
-            <h3 className="font-mono text-sm uppercase tracking-widest text-signal">Le profil idéal</h3>
-            <ul className="mt-5 flex flex-col gap-4">
+          </Stagger>
+          <Reveal className="rounded-[20px] bg-accent p-7 text-ink shadow-block sm:p-9">
+            <span className="inline-block rounded-[4px] bg-ink px-2.5 py-1 font-display text-sm font-bold uppercase tracking-[0.12em] text-accent-soft">Profil idéal</span>
+            <ul className="mt-6 flex flex-col gap-5">
               {CRITERIA.map((c) => (
-                <li key={c} className="flex gap-3"><Icon name="check" className="mt-0.5 shrink-0 text-signal" /> <span>{c}</span></li>
+                <li key={c} className="flex gap-3 text-lg font-semibold"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-ink text-accent"><Icon name="check" size={16} /></span>{c}</li>
               ))}
             </ul>
           </Reveal>
         </div>
 
-        <h3 className="mb-8 mt-20 text-3xl font-semibold">Les 5 étapes pour ouvrir votre club</h3>
-        <ol className="relative grid gap-5 lg:grid-cols-5">
-          <div aria-hidden="true" className="absolute left-[22px] top-0 h-full w-px bg-gradient-to-b from-signal via-data to-transparent lg:left-0 lg:top-[22px] lg:h-px lg:w-full lg:bg-gradient-to-r" />
+        <h3 className="mb-8 mt-20 text-5xl">Les 5 étapes vers votre club</h3>
+        <Stagger as="ol" className="grid gap-4 lg:grid-cols-5">
           {STEPS.map((s, i) => (
-            <Reveal as="li" key={s.t} delay={i * 90} className="relative flex gap-4 lg:flex-col">
-              <span className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-signal/50 bg-carbon font-mono text-sm text-signal">{i + 1}</span>
-              <div>
-                <p className="font-mono text-xs uppercase tracking-widest text-data">{s.when}</p>
-                <h4 className="mt-1 text-xl font-semibold">{s.t}</h4>
-                <p className="mt-2 text-sm text-mute">{s.d}</p>
+            <li key={s.t} className={`relative flex flex-col rounded-card p-6 ${i === 2 ? 'bg-fg text-ink' : 'border-2 border-line bg-card'}`}>
+              <div className="flex items-center justify-between">
+                <span className={`num flex h-14 w-14 items-center justify-center rounded-control text-4xl ${i === 2 ? 'bg-ink text-fg' : 'bg-primary text-ink'}`}>{i + 1}</span>
+                <span className={`text-sm font-bold uppercase tracking-wider ${i === 2 ? 'text-ink' : 'text-accent-soft'}`}>{s.when}</span>
               </div>
-            </Reveal>
+              <h4 className={`mt-5 text-3xl ${i === 2 ? 'text-ink' : ''}`}>{s.t}</h4>
+              <p className={`mt-2 ${i === 2 ? 'font-medium' : 'text-fg-muted'}`}>{s.d}</p>
+            </li>
           ))}
-        </ol>
-        <p className="mt-6 text-xs text-faint"><span className="tag-hyp">Calendrier indicatif</span> Délais donnés à titre d'illustration, hors délai légal du DIP qui, lui, est impératif.</p>
+        </Stagger>
+        <p className="mt-5 text-faint"><span className="tag-hyp">Calendrier indicatif</span> Délais d'illustration, sauf celui du DIP qui est légal et impératif.</p>
       </div>
     </section>
   );

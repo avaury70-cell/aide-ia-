@@ -5,11 +5,11 @@ export default function Mentions() {
   return (
     <div className="container-apex max-w-3xl py-16 lg:py-24">
       <span className="eyebrow">Informations légales</span>
-      <h1 className="mt-4 text-5xl font-bold">Mentions légales</h1>
-      <div className="mt-10 flex flex-col gap-8 text-mute [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-semibold">
+      <h1 className="mt-5 text-7xl font-extrabold">Mentions légales</h1>
+      <div className="mt-10 flex flex-col gap-8 text-lg text-fg-muted [&_h2]:mb-3 [&_h2]:text-4xl">
         <section>
           <h2>Nature du site</h2>
-          <p><strong className="text-bone">Projet pédagogique fictif — Cnam Versailles, LCVM, cours ESC 132 (stratégie de communication multicanale).</strong> APEX FITNESS est une marque imaginaire. Aucune offre de franchise n'est proposée, aucun club n'existe et tous les chiffres sont des hypothèses d'illustration.</p>
+          <p><strong className="text-fg">Projet pédagogique fictif — Cnam Versailles, LCVM, cours ESC 132 (stratégie de communication multicanale).</strong> APEX FITNESS est une marque imaginaire. Aucune offre de franchise n'est proposée, aucun club n'existe et tous les chiffres sont des hypothèses d'illustration.</p>
         </section>
         <section>
           <h2>Éditeur</h2>
@@ -25,7 +25,7 @@ export default function Mentions() {
         </section>
         <section id="rgpd">
           <h2>Données personnelles (RGPD)</h2>
-          <p>Dans ce prototype, <strong className="text-bone">le formulaire n'envoie et ne stocke aucune donnée</strong>. Dans une version réelle, la politique serait la suivante :</p>
+          <p>Dans ce prototype, <strong className="text-fg">le formulaire n'envoie et ne stocke aucune donnée</strong>. Dans une version réelle, la politique serait la suivante :</p>
           <ul className="mt-3 list-disc space-y-2 pl-5">
             <li>Finalité : traiter votre demande de dossier de candidature et vous recontacter.</li>
             <li>Base légale : votre consentement (article 6.1.a du RGPD).</li>

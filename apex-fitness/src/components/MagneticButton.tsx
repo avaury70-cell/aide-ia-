@@ -3,10 +3,10 @@ import { useRef, type ReactNode, type PointerEvent } from 'react';
 import { useFinePointer, useReducedMotion } from '../hooks/useMedia';
 
 type Props = {
-  to?: string; // lien interne (react-router) ou ancre
-  href?: string; // lien externe / fichier
+  to?: string;
+  href?: string;
   onClick?: () => void;
-  variant?: 'primary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'dark';
   children: ReactNode;
   className?: string;
   type?: 'button' | 'submit';
@@ -15,44 +15,23 @@ type Props = {
 };
 
 /**
- * Bouton « magnétique » : il se décale légèrement vers le curseur.
- * Désactivé sur écrans tactiles et si prefers-reduced-motion.
+ * Bouton « magnétique » : il suit légèrement le curseur (souris uniquement,
+ * désactivé si prefers-reduced-motion). Cible tactile ≥ 48 px.
  */
 export default function MagneticButton({ to, href, onClick, variant = 'primary', children, className = '', type = 'button', disabled, download }: Props) {
   const ref = useRef<HTMLElement | null>(null);
-  const fine = useFinePointer();
-  const reduced = useReducedMotion();
-  const active = fine && !reduced;
+  const active = useFinePointer() && !useReducedMotion();
 
   const move = (e: PointerEvent) => {
     if (!active || !ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    const x = (e.clientX - (r.left + r.width / 2)) * 0.25;
-    const y = (e.clientY - (r.top + r.height / 2)) * 0.35;
-    ref.current.style.transform = `translate(${x}px, ${y}px)`;
+    ref.current.style.translate = `${(e.clientX - (r.left + r.width / 2)) * 0.2}px ${(e.clientY - (r.top + r.height / 2)) * 0.3}px`;
   };
-  const leave = () => {
-    if (ref.current) ref.current.style.transform = '';
-  };
+  const leave = () => ref.current && (ref.current.style.translate = '');
+  const cls = `btn-${variant} ${className}`;
+  const h = { onPointerMove: move, onPointerLeave: leave };
 
-  const cls = `${variant === 'primary' ? 'btn-primary' : 'btn-ghost'} ${className}`;
-  const handlers = { onPointerMove: move, onPointerLeave: leave };
-
-  if (to)
-    return (
-      <Link ref={(el) => (ref.current = el)} to={to} className={cls} {...handlers} onClick={onClick}>
-        {children}
-      </Link>
-    );
-  if (href)
-    return (
-      <a ref={(el) => (ref.current = el)} href={href} className={cls} {...handlers} download={download}>
-        {children}
-      </a>
-    );
-  return (
-    <button ref={(el) => (ref.current = el)} type={type} className={cls} {...handlers} onClick={onClick} disabled={disabled}>
-      {children}
-    </button>
-  );
+  if (to) return <Link ref={(el) => (ref.current = el)} to={to} className={cls} {...h} onClick={onClick}>{children}</Link>;
+  if (href) return <a ref={(el) => (ref.current = el)} href={href} className={cls} {...h} download={download}>{children}</a>;
+  return <button ref={(el) => (ref.current = el)} type={type} className={cls} {...h} onClick={onClick} disabled={disabled}>{children}</button>;
 }

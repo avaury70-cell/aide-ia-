@@ -1,124 +1,105 @@
+/* =================================================================
+   APEX FITNESS v2 — style « Vibrant & Block-based » (skill UI/UX Pro Max)
+   Blocs francs, géométrie, fort contraste, typo condensée XXL,
+   motifs animés, survols marqués (200–300 ms).
+================================================================= */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------------
-   Base
------------------------------------------------------------------- */
 @layer base {
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-  body {
-    @apply bg-carbon text-bone font-sans antialiased;
-    font-size: 1rem;
-    line-height: 1.6;
-  }
-  h1, h2, h3, h4 { @apply font-display tracking-tight text-bone; line-height: 1.08; }
-  ::selection { background: var(--c-signal); color: var(--c-carbon); }
+  body { @apply bg-bg font-sans text-fg antialiased; font-size: 1.0625rem; line-height: 1.6; }
+  h1, h2, h3, h4 { @apply font-display font-bold uppercase text-fg; line-height: 0.95; letter-spacing: -0.005em; }
+  ::selection { background: var(--c-primary); color: var(--c-ink); }
+  a, button, [role='button'], summary, label[for], select, input[type='checkbox'], input[type='radio'], input[type='range'] { cursor: pointer; }
 
-  /* Focus visible, très contrasté (WCAG 2.4.7) */
-  :focus-visible {
-    outline: 2px solid var(--c-signal);
-    outline-offset: 3px;
-    border-radius: 6px;
-  }
-  [id] { scroll-margin-top: 88px; }
+  /* Focus très visible (orange clair, ≥ 3:1 sur tous les fonds) */
+  :focus-visible { outline: 3px solid var(--c-primary-soft); outline-offset: 3px; border-radius: 6px; }
+  [id] { scroll-margin-top: 84px; }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    *, *::before, *::after {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-    }
+    *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
   }
 }
 
-/* ------------------------------------------------------------------
-   Composants récurrents
------------------------------------------------------------------- */
 @layer components {
   .container-apex { @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8; }
-  .section { padding-block: theme('spacing.section'); }
 
-  /* Surtitre en mono, avec un point Signal */
-  .eyebrow {
-    @apply inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-signal;
-  }
-  .eyebrow::before {
-    content: ''; width: 6px; height: 6px; border-radius: 2px; background: currentColor;
-    box-shadow: 0 0 12px currentColor;
-  }
-  .title-section { @apply text-3xl font-semibold sm:text-4xl lg:text-5xl; text-wrap: balance; }
-  .lead { @apply text-lg text-mute; max-width: 62ch; }
+  /* Étiquette-bloc : rectangle orange plein, texte encre */
+  .eyebrow { @apply inline-flex items-center gap-2 self-start rounded-[4px] bg-primary px-2.5 py-1 font-display text-sm font-bold uppercase tracking-[0.12em] text-ink; }
+  .eyebrow-accent { @apply eyebrow bg-accent; }
+  .title-section { @apply text-[2.75rem] sm:text-6xl lg:text-7xl; text-wrap: balance; }
+  .lead { @apply text-lg text-fg-muted sm:text-xl; max-width: 60ch; }
 
-  /* Carte glassmorphism léger */
-  .glass {
-    @apply rounded-card border border-bone/10 shadow-glass;
-    background: linear-gradient(160deg, rgba(30,37,48,0.72), rgba(21,26,34,0.55));
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+  /* Carte-bloc */
+  .block-card {
+    @apply rounded-card border border-line bg-card p-6 shadow-md transition-[transform,box-shadow,border-color] duration-200 ease-out;
   }
+  .block-card-hover { @apply block-card hover:-translate-y-1 hover:border-primary hover:shadow-block-primary; }
 
-  /* Boutons */
+  /* Boutons (spécification MASTER.md, texte encre sur vert pour le contraste) */
   .btn {
-    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-control px-6 font-display text-base font-semibold
-      transition-[background-color,box-shadow,color,transform] duration-200 ease-apex;
+    @apply inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control px-6 py-3 font-display text-lg font-bold uppercase tracking-wide
+      transition-[transform,box-shadow,background-color,color] duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
   }
-  .btn-primary { @apply btn bg-signal text-carbon hover:shadow-signal; }
-  .btn-ghost { @apply btn border border-bone/20 text-bone hover:border-bone/50 hover:bg-bone/5; }
+  .btn-primary { @apply btn bg-accent text-ink shadow-block hover:-translate-y-0.5 hover:bg-accent-soft active:translate-y-0 active:shadow-none; }
+  .btn-secondary { @apply btn border-2 border-primary text-primary-soft hover:bg-primary hover:text-ink; }
+  .btn-dark { @apply btn bg-ink text-fg shadow-[6px_6px_0_0_rgba(15,23,42,0.35)] hover:-translate-y-0.5 hover:bg-bg; }
 
-  /* Mention d'hypothèse / sourcing */
-  .tag-hyp {
-    @apply inline-flex items-center gap-1 rounded-pill border border-data/40 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-data;
-  }
-  .tag-source {
-    @apply inline-flex rounded-md border border-alert/50 bg-alert/10 px-1.5 font-mono text-[0.8em] text-alert;
-  }
+  .tag-hyp { @apply inline-flex items-center gap-1 rounded-pill border border-accent-soft/60 px-2.5 py-0.5 font-sans text-xs font-semibold uppercase tracking-wider text-accent-soft; }
+  .tag-source { @apply inline-flex rounded-[4px] bg-danger px-1.5 font-semibold text-black; }
 
-  /* Champs de formulaire */
   .field {
-    @apply w-full min-h-[48px] rounded-control border border-steel bg-carbon px-4 py-3 text-bone placeholder:text-faint
-      transition-colors focus:border-signal focus:outline-none focus-visible:outline-none;
+    @apply min-h-[48px] w-full rounded-control border border-line bg-ink px-4 py-3 text-base text-fg placeholder:text-faint
+      transition-[border-color,box-shadow] duration-200 focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/25;
   }
-  .field[aria-invalid='true'] { @apply border-alert; }
+  .field[aria-invalid='true'] { @apply border-danger-soft; }
+
+  .num { @apply font-display font-bold tabular-nums; }
 }
 
-/* ------------------------------------------------------------------
-   Fonds graphiques : grille de points et halo
------------------------------------------------------------------- */
-.bg-dots {
-  background-image: radial-gradient(rgba(244, 246, 248, 0.09) 1px, transparent 1.2px);
-  background-size: 22px 22px;
+/* -----------------------------------------------------------------
+   Motifs animés (anti-pattern du skill : « design statique »)
+----------------------------------------------------------------- */
+.bg-stripes {
+  background-image: repeating-linear-gradient(-45deg, rgba(249,115,22,0.10) 0 2px, transparent 2px 22px);
+  background-size: 64px 64px;
+  animation: stripes 6s linear infinite;
 }
-.bg-halo {
-  background:
-    radial-gradient(60% 50% at 70% 30%, rgba(60, 224, 255, 0.10), transparent 70%),
-    radial-gradient(40% 40% at 20% 80%, rgba(184, 255, 60, 0.07), transparent 70%);
+@keyframes stripes { to { background-position: 64px 0; } }
+.bg-grid {
+  background-image: linear-gradient(rgba(248,250,252,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(248,250,252,0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
+.bg-dots { background-image: radial-gradient(rgba(248,250,252,0.12) 1.2px, transparent 1.4px); background-size: 20px 20px; }
 
-/* Révélation au scroll (voir components/Reveal.tsx) */
-.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s var(--ease-apex), transform 0.9s var(--ease-apex); }
+/* Bandeau défilant */
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee-track { animation: marquee 28s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* Révélation douce (skill : y 8–16px, 300–400ms) */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.4s ease-out, transform 0.4s ease-out; }
 .reveal.is-visible { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+.no-js .reveal { opacity: 1; transform: none; }
 
-/* Ligne lumineuse animée (connexions) */
 @keyframes dash { to { stroke-dashoffset: -40; } }
 .flow-line { stroke-dasharray: 6 14; animation: dash 1.6s linear infinite; }
 
-/* Slider du simulateur */
-input[type='range'].range {
-  -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: pointer;
-}
+/* Curseurs du simulateur */
+input[type='range'].range { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; }
 input[type='range'].range::-webkit-slider-runnable-track {
-  height: 6px; border-radius: 99px;
-  background: linear-gradient(to right, var(--c-signal) var(--fill, 50%), var(--c-steel) var(--fill, 50%));
+  height: 8px; border-radius: 4px;
+  background: linear-gradient(to right, var(--c-primary) var(--fill, 50%), var(--c-muted) var(--fill, 50%));
 }
-input[type='range'].range::-moz-range-track { height: 6px; border-radius: 99px; background: var(--c-steel); }
-input[type='range'].range::-moz-range-progress { height: 6px; border-radius: 99px; background: var(--c-signal); }
+input[type='range'].range::-moz-range-track { height: 8px; border-radius: 4px; background: var(--c-muted); }
+input[type='range'].range::-moz-range-progress { height: 8px; border-radius: 4px; background: var(--c-primary); }
 input[type='range'].range::-webkit-slider-thumb {
-  -webkit-appearance: none; margin-top: -9px; width: 24px; height: 24px; border-radius: 50%;
-  background: var(--c-bone); border: 4px solid var(--c-signal); box-shadow: 0 0 0 6px rgba(184,255,60,0.15);
+  -webkit-appearance: none; margin-top: -10px; width: 28px; height: 28px; border-radius: 6px;
+  background: var(--c-fg); border: 4px solid var(--c-primary); box-shadow: 3px 3px 0 0 var(--c-ink); transition: transform .2s;
 }
-input[type='range'].range::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%; background: var(--c-bone); border: 4px solid var(--c-signal);
-}
+input[type='range'].range:active::-webkit-slider-thumb { transform: scale(1.1); }
+input[type='range'].range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 6px; background: var(--c-fg); border: 4px solid var(--c-primary); }

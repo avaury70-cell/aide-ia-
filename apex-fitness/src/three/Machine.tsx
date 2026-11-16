@@ -18,9 +18,10 @@ export type MachineCtrl = { scan: number; ring: number; load: number; seat: numb
 export const initialCtrl = (): MachineCtrl => ({ scan: 0, ring: 0, load: 0, seat: 0 });
 
 const C = tokens.color;
-const SIGNAL = new THREE.Color(C.signal);
-const DATA = new THREE.Color(C.data);
-const DIM = new THREE.Color('#222a35');
+const SIGNAL = new THREE.Color(C.primary); // anneau, charge : Orange Énergie
+const GO = new THREE.Color(C.accent); // scan validé : Vert Go
+const DATA = new THREE.Color(C.accent);
+const DIM = new THREE.Color('#2a3240');
 const PLATES = 14;
 const RING_SEGMENTS = 30;
 const RING_ARC = (300 / 360) * Math.PI * 2; // anneau ouvert (comme le logo)
@@ -32,22 +33,22 @@ function makeQrTexture() {
   const cv = document.createElement('canvas');
   cv.width = cv.height = (n + 4) * px;
   const g = cv.getContext('2d')!;
-  g.fillStyle = C.bone;
+  g.fillStyle = C.fg;
   g.fillRect(0, 0, cv.width, cv.height);
   let seed = 7;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const finder = (x: number, y: number) => x < 8 && y < 8;
   const isFinder = (x: number, y: number) => finder(x, y) || finder(n - 1 - x, y) || finder(x, n - 1 - y);
-  g.fillStyle = C.carbon;
+  g.fillStyle = C.ink;
   for (let y = 0; y < n; y++)
     for (let x = 0; x < n; x++) if (!isFinder(x, y) && rnd() > 0.52) g.fillRect((x + 2) * px, (y + 2) * px, px, px);
   const drawFinder = (fx: number, fy: number) => {
     const o = (v: number) => (v + 2) * px;
-    g.fillStyle = C.carbon;
+    g.fillStyle = C.ink;
     g.fillRect(o(fx), o(fy), 7 * px, 7 * px);
-    g.fillStyle = C.bone;
+    g.fillStyle = C.fg;
     g.fillRect(o(fx + 1), o(fy + 1), 5 * px, 5 * px);
-    g.fillStyle = C.carbon;
+    g.fillStyle = C.ink;
     g.fillRect(o(fx + 2), o(fy + 2), 3 * px, 3 * px);
   };
   drawFinder(0, 0);
@@ -129,7 +130,7 @@ export default function Machine({ ctrl, instant = false }: { ctrl: MutableRefObj
       laser.current.visible = c.scan > 0.001 && c.scan < 0.999;
       laser.current.position.y = 0.22 - c.scan * 0.44;
     }
-    mat.qrFrame.color.copy(DIM).lerp(SIGNAL, THREE.MathUtils.smoothstep(c.scan, 0.85, 1));
+    mat.qrFrame.color.copy(DIM).lerp(GO, THREE.MathUtils.smoothstep(c.scan, 0.85, 1));
     mat.link.opacity = THREE.MathUtils.smoothstep(c.scan, 0.9, 1) * 0.9 * (1 - c.ring * 0.4);
 
     // Anneau : allumage progressif des segments
@@ -220,7 +221,7 @@ export default function Machine({ ctrl, instant = false }: { ctrl: MutableRefObj
           <mesh key={i} geometry={ringSegGeo} material={m} rotation={[0, 0, (i / RING_SEGMENTS) * RING_ARC]} />
         ))}
       </group>
-      <pointLight ref={ringLight} position={[0, 1.25, -0.1]} color={C.signal} intensity={0} distance={2.2} decay={2} />
+      <pointLight ref={ringLight} position={[0, 1.25, -0.1]} color={C.primary} intensity={0} distance={2.2} decay={2} />
 
       {/* QR code flottant + ligne laser */}
       <group position={[0.98, 1.42, 0.32]} rotation={[0, -0.55, 0]}>
